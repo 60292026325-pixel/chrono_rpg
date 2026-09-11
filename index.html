@@ -208,6 +208,66 @@ h3{color:#f1c40f;margin-bottom:8px;font-size:14px;}
 .order-btn.active.gangan{border-color:#e74c3c;color:#e74c3c;background:#3a1a1a;}
 .order-btn.active.batchi{border-color:#2ecc71;color:#2ecc71;background:#1a3a1a;}
 .order-btn.active.inochi{border-color:#3498db;color:#3498db;background:#1a2a3a;}
+
+/* ===== カジノ画面 ===== */
+#casino-screen{background:linear-gradient(180deg,#1a0a2e 0%,#0d0a1a 100%);
+  border:3px solid #f1c40f;border-radius:8px;padding:16px;}
+#casino-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+#casino-title{color:#f1c40f;font-size:18px;font-weight:bold;text-shadow:0 0 10px rgba(241,196,15,.6);}
+#casino-medal-disp{font-size:13px;background:#111;border:1px solid #f1c40f;
+  border-radius:20px;padding:4px 14px;color:#f1c40f;}
+/* タブ */
+.casino-tabs{display:flex;gap:4px;margin-bottom:12px;}
+.casino-tab{flex:1;padding:8px;text-align:center;font-size:13px;background:#111;
+  border:1px solid #333;border-radius:4px 4px 0 0;cursor:pointer;color:#888;}
+.casino-tab.active{background:#1a1a2e;border-color:#f1c40f;color:#f1c40f;}
+.casino-pane{display:none;} .casino-pane.active{display:block;}
+/* スロット */
+#slot-machine{background:#0a0a18;border:2px solid #555;border-radius:10px;
+  padding:20px;text-align:center;margin-bottom:14px;}
+#slot-reels{display:flex;justify-content:center;gap:10px;margin-bottom:16px;}
+.slot-reel{width:80px;height:90px;background:#111;border:2px solid #444;
+  border-radius:8px;overflow:hidden;position:relative;}
+.slot-reel-inner{position:absolute;width:100%;transition:transform 0s;}
+.slot-reel-inner.spinning{transition:none;}
+.slot-symbol{height:90px;display:flex;align-items:center;justify-content:center;
+  font-size:40px;line-height:1;}
+#slot-bet-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;}
+#slot-bet-disp{font-size:14px;color:#f1c40f;min-width:80px;text-align:center;}
+.slot-bet-btn{background:#1a1a2e;border:1px solid #555;color:#ccc;padding:4px 12px;
+  border-radius:4px;cursor:pointer;font-size:12px;}
+.slot-bet-btn:hover{border-color:#f1c40f;color:#f1c40f;}
+#slot-spin-btn{background:linear-gradient(135deg,#c0392b,#e74c3c);color:#fff;
+  border:none;padding:12px 40px;border-radius:8px;font-size:16px;font-weight:bold;
+  cursor:pointer;box-shadow:0 4px 12px rgba(231,76,60,.5);transition:transform .1s;}
+#slot-spin-btn:hover{transform:scale(1.05);}
+#slot-spin-btn:disabled{background:#333;color:#666;box-shadow:none;cursor:not-allowed;transform:none;}
+#slot-result-msg{min-height:32px;font-size:14px;font-weight:bold;color:#f1c40f;
+  text-align:center;margin-bottom:6px;line-height:1.5;}
+/* 当選表 */
+.pay-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;}
+.pay-table th{color:#f1c40f;padding:4px 8px;border-bottom:1px solid #333;text-align:left;}
+.pay-table td{color:#aaa;padding:3px 8px;border-bottom:1px solid #1a1a1a;}
+.pay-table tr.jackpot td{color:#f1c40f;font-weight:bold;}
+/* メダル交換所 */
+.exchange-card{background:#0a0a18;border:1px solid #555;border-radius:8px;
+  padding:12px;margin-bottom:10px;display:flex;align-items:center;gap:14px;}
+.exchange-icon{font-size:32px;flex-shrink:0;}
+.exchange-info{flex:1;}
+.exchange-name{font-size:14px;font-weight:bold;color:#f1c40f;margin-bottom:3px;}
+.exchange-desc{font-size:11px;color:#888;margin-bottom:5px;}
+.exchange-cost{font-size:12px;color:#f39c12;}
+.exchange-btn{background:#1a2a3a;border:1px solid #3498db;border-radius:4px;
+  padding:6px 14px;color:#3498db;font-size:12px;cursor:pointer;white-space:nowrap;}
+.exchange-btn:hover{background:#1a3a5a;}
+.exchange-btn:disabled{background:#111;border-color:#333;color:#444;cursor:not-allowed;}
+.exchange-owned{font-size:10px;color:#555;margin-top:2px;}
+/* メダル購入 */
+.medal-buy-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+.medal-buy-btn{background:#1a2a1a;border:1px solid #2ecc71;border-radius:4px;
+  padding:8px 14px;color:#2ecc71;font-size:12px;cursor:pointer;text-align:center;}
+.medal-buy-btn:hover{background:#1a3a1a;}
+.medal-buy-btn:disabled{background:#111;border-color:#333;color:#444;cursor:not-allowed;}
 </style>
 </head>
 <body>
@@ -327,6 +387,75 @@ h3{color:#f1c40f;margin-bottom:8px;font-size:14px;}
   </div>
 </div>
 
+<!-- ===== カジノ画面 ===== -->
+<div id="casino-screen" class="screen">
+  <div id="casino-header">
+    <div id="casino-title">🎰 カジノ「星天堂」</div>
+    <div id="casino-medal-disp">🎖 メダル: <span id="casino-medal-count">0</span> 枚</div>
+  </div>
+
+  <div class="casino-tabs">
+    <div class="casino-tab active" onclick="casinoTab('slot')">🎰 スロット</div>
+    <div class="casino-tab" onclick="casinoTab('exchange')">🏆 景品交換</div>
+    <div class="casino-tab" onclick="casinoTab('buy')">💰 メダル購入</div>
+  </div>
+
+  <!-- スロットペイン -->
+  <div id="casino-pane-slot" class="casino-pane active">
+    <div id="slot-machine">
+      <div id="slot-reels">
+        <div class="slot-reel" id="reel-0"><div class="slot-reel-inner" id="reel-inner-0"></div></div>
+        <div class="slot-reel" id="reel-1"><div class="slot-reel-inner" id="reel-inner-1"></div></div>
+        <div class="slot-reel" id="reel-2"><div class="slot-reel-inner" id="reel-inner-2"></div></div>
+      </div>
+      <div id="slot-result-msg">レバーを引いて運試し！</div>
+      <div id="slot-bet-row">
+        <button class="slot-bet-btn" onclick="slotChangeBet(-10)">－10</button>
+        <button class="slot-bet-btn" onclick="slotChangeBet(-1)">－1</button>
+        <div id="slot-bet-disp">賭け: <strong id="slot-bet-val">1</strong> 枚</div>
+        <button class="slot-bet-btn" onclick="slotChangeBet(1)">＋1</button>
+        <button class="slot-bet-btn" onclick="slotChangeBet(10)">＋10</button>
+      </div>
+      <button id="slot-spin-btn" onclick="slotSpin()">🎰 スピン！</button>
+    </div>
+
+    <!-- 当選表 -->
+    <table class="pay-table">
+      <tr><th>絵柄</th><th>組み合わせ</th><th>配当</th></tr>
+      <tr class="jackpot"><td>👑👑👑</td><td>王冠ぞろい</td><td>賭け×100（大当たり）</td></tr>
+      <tr><td>⭐⭐⭐</td><td>星ぞろい</td><td>賭け×30</td></tr>
+      <tr><td>💎💎💎</td><td>宝石ぞろい</td><td>賭け×20</td></tr>
+      <tr><td>🍒🍒🍒</td><td>チェリーぞろい</td><td>賭け×10</td></tr>
+      <tr><td>🔔🔔🔔</td><td>ベルぞろい</td><td>賭け×8</td></tr>
+      <tr><td>7️⃣7️⃣7️⃣</td><td>777ぞろい</td><td>賭け×50</td></tr>
+      <tr><td>🍋🍋🍋</td><td>レモンぞろい</td><td>賭け×5</td></tr>
+      <tr><td>🍒🍒 ？</td><td>チェリー2つ</td><td>賭け×2</td></tr>
+      <tr><td>リーチ</td><td>2つ揃い（リーチ）</td><td>賭け×1（払い戻し）</td></tr>
+    </table>
+  </div>
+
+  <!-- 景品交換ペイン -->
+  <div id="casino-pane-exchange" class="casino-pane">
+    <p style="font-size:11px;color:#888;margin-bottom:12px;">
+      メダルを使って最強の装備と交換できます。<br>
+      これらの装備は他では手に入りません。
+    </p>
+    <div id="exchange-list"></div>
+  </div>
+
+  <!-- メダル購入ペイン -->
+  <div id="casino-pane-buy" class="casino-pane">
+    <p style="font-size:11px;color:#888;margin-bottom:10px;">
+      ゴールドでメダルを購入できます。<br>
+      現在の所持金: <strong id="casino-gold-disp" style="color:#f1c40f;">0</strong> G
+    </p>
+    <div class="medal-buy-row" id="medal-buy-row"></div>
+    <p style="font-size:10px;color:#555;margin-top:8px;">※ メダルはゴールドに戻せません</p>
+  </div>
+
+  <button class="btn" onclick="leaveCasino()" style="margin-top:14px;width:100%;">← カジノを出る</button>
+</div>
+
 </div><!-- #app -->
 <script>
 
@@ -351,6 +480,7 @@ const T = {
   DWALL:26,      // ダンジョン壁
   DSTAIRS:27,    // 出口階段
   DCHEST:28,     // 宝箱
+  CASINO:30,     // カジノ
 };
 
 // バイオーム → タイル色マップ
@@ -378,6 +508,8 @@ const TILE_COLOR = {
   [T.DWALL]:    '#1a1a1a',
   [T.DSTAIRS]:  '#6a5a2a',
   [T.DCHEST]:   '#8a6a2a',
+  // カジノ
+  [T.CASINO]:   '#7a2060',
 };
 
 // エンカウント可能タイル（値 = エンカウント率）
@@ -491,11 +623,12 @@ const FACILITIES = [
   { col:11, row:8,  type:'shop',    name:'🧪 道具屋「薬草亭」',     icon:'薬' },
   { col:3,  row:17, type:'castle',  name:'🏰 王城',                 icon:'城' },
   { col:6,  row:17, type:'dungeon', name:'🕳️ 地下ダンジョン入口',   icon:'地' },
+  { col:8,  row:4,  type:'casino',  name:'🎰 カジノ「星天堂」',      icon:'賭' },
 ];
 // 施設座標をマップに焼き込み
 FACILITIES.forEach(f => {
   if (f.row < MAP_H && f.col < MAP_W) {
-    const tileMap = { inn:T.INN, weapon:T.WEAPON, shop:T.SHOP, castle:T.CASTLE, dungeon:T.DUNG_ENTER };
+    const tileMap = { inn:T.INN, weapon:T.WEAPON, shop:T.SHOP, castle:T.CASTLE, dungeon:T.DUNG_ENTER, casino:T.CASINO };
     MAP_DATA[f.row][f.col] = tileMap[f.type] ?? T.GRASS;
   }
 });
@@ -536,6 +669,22 @@ const EQUIP_MASTER = {
   '竜鱗の鎧': { category:'armor', atk:0,  def:8,  mp:0,  price:0,   desc:'DEF+8 高防御（クラフト）' },
   '盾':        { category:'shield',atk:0, def:6,  mp:0,  price:120, desc:'DEF+6' },
   '魔法の盾':  { category:'shield',atk:0, def:10, mp:10, price:300, desc:'DEF+10 MP+10' },
+  // ── カジノ交換限定・最強装備 ──
+  'はかぶさのつるぎ': {
+    category:'sword', atk:38, def:0, mp:0, price:0,
+    desc:'ATK+38 二回攻撃。はやぶさの剣を超える伝説の剣。1撃の威力も高い',
+    doubleAttack:true, superDouble:true, // superDouble=1撃ごとの威力も高い
+  },
+  '先代の鎧': {
+    category:'armor', atk:0, def:28, mp:0, price:0,
+    desc:'DEF+28 受けたダメージの3%を敵に跳ね返す伝説の鎧',
+    reflect:0.03, // 受けたダメージの3%を跳ね返す
+  },
+  '破邪の盾': {
+    category:'shield', atk:0, def:22, mp:15, price:0,
+    desc:'DEF+22 MP+15 装備者の最初の攻撃が確定会心になる伝説の盾',
+    firstCrit:true, // 戦闘開幕の最初の1撃が確定会心
+  },
 };
 
 // 所持装備リスト（購入・クラフト結果を追加していく）
@@ -1251,6 +1400,7 @@ const TILE_LABEL = {
   [T.SNOW]:'*',  [T.SWAMP]:'~', [T.INN]:'宿',  [T.WEAPON]:'武',
   [T.SHOP]:'薬', [T.CASTLE]:'城',[T.DEAD_TREE]:'†',
   [T.DUNG_ENTER]:'地', [T.DSTAIRS]:'↑', [T.DCHEST]:'宝',
+  [T.CASINO]:'賭',
 };
 
 function drawMap() {
@@ -1453,7 +1603,11 @@ function _initBattle() {
   firstCmdShown = false;
   currentTurnChar = null;
 
-  party.forEach(p => { p.gauge = 0; p.ready = false; p.pStatus = null; });
+  party.forEach(p => {
+    p.gauge = 0; p.ready = false; p.pStatus = null;
+    // 破邪の盾の初回確定会心フラグをリセット
+    p.firstCritUsed = false;
+  });
 
   // 敵UI生成
   const ea = document.getElementById('enemy-area');
@@ -1607,6 +1761,17 @@ function startBattleLoops() {
           printLog(res.miss
             ? `💥【${en.name}】→${tgt.name} MISS！`
             : `💥【${en.name}】→${tgt.name} ${finalDmg}ダメージ${res.crit?' ✨CRIT':''}${tgt.hp<=0?' →戦闘不能！':` (残${tgt.hp})`}`);
+        }
+        // ── 先代の鎧：受けたダメージの3%を跳ね返す ──
+        if (!res.miss && finalDmg > 0) {
+          const armorEq = tgt.armor ? EQUIP_MASTER[tgt.armor] : null;
+          if (armorEq?.reflect) {
+            const refDmg = Math.max(1, Math.floor(finalDmg * armorEq.reflect));
+            en.hp = Math.max(0, en.hp - refDmg);
+            updateEnemyUI(en);
+            printLog(`🔄【${tgt.name}】先代の鎧が ${refDmg} ダメージを跳ね返した！→【${en.name}】(残${en.hp})`);
+            if (en.hp <= 0) { checkVictory(); return; }
+          }
         }
         checkPartyWipe();
       }
@@ -2001,18 +2166,37 @@ function selectAction(type) {
             checkVictory();
           }
         } else {
-          // はやぶさの剣は1撃あたりの威力を少し下げる（2回合計で通常攻撃相当）
-          const atkPow = attackCount > 1 ? Math.floor(atk * 0.6) : atk;
-          const res = calcDamage(atkPow, Math.floor(atkPow * 0.3), 0);
+          // はかぶさのつるぎ: 1撃の威力も高い（superDouble = 0.75倍×2回）
+          // はやぶさの剣:     1撃0.6倍×2回
+          // 通常:             1倍×1回
+          const isSuperDouble = weaponData?.superDouble;
+          const atkMult = attackCount > 1 ? (isSuperDouble ? 0.75 : 0.6) : 1.0;
+          const atkPow = Math.floor(atk * atkMult);
+
+          // 破邪の盾：戦闘初回の攻撃が確定会心
+          const armorData = currentTurnChar.armor ? EQUIP_MASTER[currentTurnChar.armor] : null;
+          const isFirstCrit = armorData?.firstCrit && !currentTurnChar.firstCritUsed;
+          if (isFirstCrit) currentTurnChar.firstCritUsed = true;
+
+          let res;
+          if (isFirstCrit) {
+            const roll = Math.floor(Math.random() * (Math.floor(atkPow * 0.3) * 2 + 1)) - Math.floor(atkPow * 0.3);
+            const dmg  = Math.floor(Math.max(1, atkPow + roll) * 1.5);
+            res = { dmg, miss: false, crit: true };
+          } else {
+            res = calcDamage(atkPow, Math.floor(atkPow * 0.3), 0);
+          }
+
           if (!res.miss) tgt.hp = Math.max(0, tgt.hp - res.dmg);
           updateEnemyUI(tgt);
           if (res.crit) {
             AudioEngine.se('se_crit_player');
             TechFX.play({ shape:'ring', colors:['#ffff00','#ffffff','#ffcc00'], duration:350 });
           }
+          const firstCritLabel = isFirstCrit ? ' 🔰破邪の盾！' : '';
           printLog(res.miss
             ? `⚔️${hitLabel}【${currentTurnChar.name}】→【${tgt.name}】MISS！`
-            : `⚔️${hitLabel}【${currentTurnChar.name}】→【${tgt.name}】${res.dmg}ダメージ${res.crit?' 💥会心の一撃！！':''}${tgt.hp<=0?' →撃破！':` (残${tgt.hp})`}`);
+            : `⚔️${hitLabel}【${currentTurnChar.name}】→【${tgt.name}】${res.dmg}ダメージ${res.crit?` 💥会心の一撃！！${firstCritLabel}`:''}${tgt.hp<=0?' →撃破！':` (残${tgt.hp})`}`);
           checkVictory();
         }
 
@@ -2560,7 +2744,7 @@ function printLog(text) {
 // 経験値・レベルアップ
 // =============================================
 function calcNextExp(lv) {
-  return Math.floor(100 * Math.pow(1.45, lv - 1));
+  return Math.floor(80 * Math.pow(1.30, lv - 1));
 }
 
 // レベルアップ時のステータス成長（キャラごとに個性を出す）
@@ -2805,8 +2989,12 @@ function renderEquipTab() {
     // ── 現在の装備スロット表示 ──
     const wEq   = p.weapon ? EQUIP_MASTER[p.weapon] : null;
     const aEq   = p.armor  ? EQUIP_MASTER[p.armor]  : null;
-    const wStats = wEq ? `ATK+${wEq.atk}${wEq.def?' DEF+'+wEq.def:''}${wEq.mp?' MP+'+wEq.mp:''}` : '装備なし';
-    const aStats = aEq ? `DEF+${aEq.def}${aEq.mp?' MP+'+aEq.mp:''}` : '装備なし';
+    const wStats = wEq
+      ? `ATK+${wEq.atk}${wEq.def?' DEF+'+wEq.def:''}${wEq.mp?' MP+'+wEq.mp:''}${wEq.doubleAttack?' ⚡2回攻撃':''}`
+      : '装備なし';
+    const aStats = aEq
+      ? `DEF+${aEq.def}${aEq.mp?' MP+'+aEq.mp:''}${aEq.reflect?' 🔄跳ね返し'+Math.round(aEq.reflect*100)+'%':''}${aEq.firstCrit?' 🔰初回確定会心':''}`
+      : '装備なし';
 
     block.innerHTML = `
       <h4>${job.icon} ${p.name}（${job.name}）
@@ -3753,6 +3941,7 @@ function enterFacility(fac) {
   else if (fac.type === 'weapon') renderWeaponShop(opts);
   else if (fac.type === 'shop')   renderItemShop(opts);
   else if (fac.type === 'castle') renderCastle(opts);
+  else if (fac.type === 'casino') { showScreen('casino-screen'); renderCasino(); return; }
 
   showScreen('facility-screen');
 }
@@ -3955,6 +4144,280 @@ function renderCastle(el) {
     </div>`;
 }
 
+
+// =============================================
+// カジノ「星天堂」
+// =============================================
+
+// メダル枚数
+let casinoMedals = 0;
+
+// スロット絵柄定義（シンボル・レア度・倍率）
+const SLOT_SYMBOLS = ['🍋','🍒','🔔','💎','⭐','7️⃣','👑'];
+// 各シンボルのリール出現頻度（多いほど出やすい）
+const SLOT_WEIGHTS  = [  20,   15,   12,    8,    6,    4,    2];
+
+let slotBet      = 1;
+let slotSpinning = false;
+// 破邪の盾の「初回攻撃確定会心」フラグ（戦闘開幕時にリセット）
+// → _initBattle で全員リセット、selectAction/executeTech で使用後オフ
+// firstCritUsed は party[i].firstCritUsed で管理
+
+// スロットタブ切り替え
+function casinoTab(name) {
+  document.querySelectorAll('.casino-tab').forEach((b,i) => {
+    const names = ['slot','exchange','buy'];
+    b.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.casino-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById(`casino-pane-${name}`)?.classList.add('active');
+  if (name === 'exchange') renderExchangeList();
+  if (name === 'buy')      renderMedalBuy();
+}
+
+// カジノ画面描画
+function renderCasino() {
+  updateCasinoMedalDisp();
+  // リール初期化
+  SLOT_REEL_INIT.forEach((sym, i) => setReelSymbol(i, sym));
+  document.getElementById('slot-result-msg').textContent = 'レバーを引いて運試し！';
+  document.getElementById('slot-result-msg').style.color = '#f1c40f';
+  updateSlotBetDisp();
+}
+
+// メダル表示更新
+function updateCasinoMedalDisp() {
+  document.getElementById('casino-medal-count').textContent = casinoMedals;
+}
+
+// ベット変更
+function slotChangeBet(delta) {
+  slotBet = Math.max(1, Math.min(casinoMedals, slotBet + delta));
+  updateSlotBetDisp();
+}
+function updateSlotBetDisp() {
+  document.getElementById('slot-bet-val').textContent = slotBet;
+  document.getElementById('slot-spin-btn').disabled = slotSpinning || casinoMedals < slotBet || slotBet < 1;
+}
+
+// リールに絵柄セット
+const SLOT_REEL_INIT = ['🎰','🎰','🎰'];
+function setReelSymbol(reelIdx, sym) {
+  const inner = document.getElementById(`reel-inner-${reelIdx}`);
+  if (!inner) return;
+  inner.innerHTML = `<div class="slot-symbol">${sym}</div>`;
+}
+
+// 重み付きランダムシンボル
+function pickSlotSymbol() {
+  const total = SLOT_WEIGHTS.reduce((a,b) => a+b, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < SLOT_SYMBOLS.length; i++) {
+    r -= SLOT_WEIGHTS[i];
+    if (r <= 0) return SLOT_SYMBOLS[i];
+  }
+  return SLOT_SYMBOLS[0];
+}
+
+// スピン処理
+function slotSpin() {
+  if (slotSpinning || casinoMedals < slotBet) return;
+
+  // ベット分消費
+  casinoMedals -= slotBet;
+  slotSpinning = true;
+  document.getElementById('slot-spin-btn').disabled = true;
+  document.getElementById('slot-result-msg').textContent = '回転中...';
+  document.getElementById('slot-result-msg').style.color = '#aaa';
+  updateCasinoMedalDisp();
+
+  // 結果をあらかじめ決定
+  const results = [pickSlotSymbol(), pickSlotSymbol(), pickSlotSymbol()];
+
+  // リール別に停止タイミングをずらしてアニメ
+  const SPIN_FRAMES = 18; // 1リールあたりのフレーム数
+  const STOP_DELAY  = [600, 1000, 1400]; // 各リールが止まるミリ秒
+
+  // アニメーション：各リールを高速でランダム表示 → 指定時刻に結果で止める
+  const spinIntervals = [null, null, null];
+  [0, 1, 2].forEach(i => {
+    let frame = 0;
+    spinIntervals[i] = setInterval(() => {
+      setReelSymbol(i, SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)]);
+      frame++;
+    }, 60);
+
+    setTimeout(() => {
+      clearInterval(spinIntervals[i]);
+      setReelSymbol(i, results[i]);
+      // 最後のリールが止まったら判定
+      if (i === 2) {
+        setTimeout(() => slotJudge(results), 200);
+      }
+    }, STOP_DELAY[i]);
+  });
+}
+
+// 当選判定
+function slotJudge(res) {
+  const [a, b, c] = res;
+  let payout = 0;
+  let msg    = '';
+  let color  = '#f1c40f';
+
+  if (a === b && b === c) {
+    // 3つ揃い
+    const mult = {
+      '👑': 100, '7️⃣': 50, '⭐': 30, '💎': 20,
+      '🍒': 10,  '🔔': 8,  '🍋': 5,
+    }[a] ?? 3;
+    payout = slotBet * mult;
+    if (mult >= 50)      { msg = `🎊✨ ${a}${b}${c} JACKPOT！！ +${payout}メダル！！`; color = '#f1c40f'; }
+    else if (mult >= 20) { msg = `🎉 ${a}${b}${c} 大当たり！ +${payout}メダル！`; color = '#2ecc71'; }
+    else                 { msg = `✨ ${a}${b}${c} 当たり！ +${payout}メダル`; color = '#3498db'; }
+  } else if (a === '🍒' && b === '🍒') {
+    // チェリー2つ
+    payout = slotBet * 2;
+    msg = `🍒🍒 チェリー2つ！ +${payout}メダル`;
+    color = '#e74c3c';
+  } else if ((a===b)||(b===c)||(a===c)) {
+    // 2つ揃い（リーチ）→ 払い戻し
+    payout = slotBet;
+    msg = `😅 リーチ…！ ${payout}メダル 払い戻し`;
+    color = '#888';
+  } else {
+    // ハズレ
+    payout = 0;
+    msg = `😢 ハズレ… (${res.join('')})`;
+    color = '#555';
+  }
+
+  casinoMedals += payout;
+  document.getElementById('slot-result-msg').textContent = msg;
+  document.getElementById('slot-result-msg').style.color = color;
+  updateCasinoMedalDisp();
+
+  // ジャックポット時は特別演出
+  if (payout >= slotBet * 50) {
+    AudioEngine.se('levelup');
+    enqueuePopup(`
+      <div class="pop-title" style="color:#f1c40f;">🎰 JACKPOT！！</div>
+      <div class="pop-body">
+        <span style="font-size:28px;">${res.join('')}</span><br>
+        <span class="pop-green">+${payout} メダル獲得！！</span>
+      </div>`);
+  }
+
+  slotSpinning = false;
+  updateSlotBetDisp();
+}
+
+// 景品交換リスト描画
+const CASINO_EXCHANGE = [
+  {
+    name: 'はかぶさのつるぎ',
+    icon: '⚔️',
+    cost: 2000,
+    desc: 'ATK+38 / 二回攻撃（1撃の威力も高い）/ 全職業の剣士装備可',
+    effect: 'はやぶさの剣を遥かに超える伝説の剣。2回攻撃かつ1撃の威力も異常に高い。',
+  },
+  {
+    name: '先代の鎧',
+    icon: '🛡️',
+    cost: 1400,
+    desc: 'DEF+28 / 受けたダメージの3%を跳ね返す',
+    effect: '攻撃を受けるたびにダメージの3%を敵に返す。守りと反撃の伝説の鎧。',
+  },
+  {
+    name: '破邪の盾',
+    icon: '🔰',
+    cost: 1800,
+    desc: 'DEF+22 MP+15 / 戦闘開幕の最初の攻撃が確定会心',
+    effect: '装備者の戦闘開始後、最初の1撃が必ず会心の一撃になる伝説の盾。',
+  },
+];
+
+function renderExchangeList() {
+  const el = document.getElementById('exchange-list');
+  el.innerHTML = CASINO_EXCHANGE.map(item => {
+    const owned   = (ownedEquips[item.name] || 0) + (party.some(p => p.weapon === item.name || p.armor === item.name) ? 1 : 0);
+    const canBuy  = casinoMedals >= item.cost;
+    return `<div class="exchange-card">
+      <div class="exchange-icon">${item.icon}</div>
+      <div class="exchange-info">
+        <div class="exchange-name">${item.name}</div>
+        <div class="exchange-desc">${item.effect}</div>
+        <div class="exchange-cost">🎖 ${item.cost} メダル</div>
+        <div class="exchange-owned">所持数: ${owned}</div>
+      </div>
+      <button class="exchange-btn" ${canBuy ? '' : 'disabled'}
+        onclick="casinoExchange('${item.name}')">
+        ${canBuy ? '交換する' : 'メダル不足'}
+      </button>
+    </div>`;
+  }).join('');
+}
+
+function casinoExchange(itemName) {
+  const item = CASINO_EXCHANGE.find(x => x.name === itemName);
+  if (!item || casinoMedals < item.cost) return;
+  casinoMedals -= item.cost;
+  addEquip(itemName);
+  updateCasinoMedalDisp();
+  renderExchangeList();
+  enqueuePopup(`
+    <div class="pop-title">🏆 景品交換！</div>
+    <div class="pop-body">
+      <span style="font-size:22px;">${item.icon}</span><br>
+      <span class="pop-green">『${itemName}』</span> を入手！<br>
+      <span style="font-size:11px;color:#888;">メニュー→装備 から装備できます</span>
+    </div>`);
+}
+
+// メダル購入
+const MEDAL_PACKAGES = [
+  { medals: 10,  gold: 100,  label: '10枚'  },
+  { medals: 30,  gold: 250,  label: '30枚'  },
+  { medals: 100, gold: 700,  label: '100枚' },
+  { medals: 300, gold: 1800, label: '300枚' },
+];
+
+function renderMedalBuy() {
+  document.getElementById('casino-gold-disp').textContent = gold;
+  const row = document.getElementById('medal-buy-row');
+  row.innerHTML = MEDAL_PACKAGES.map((pkg, i) =>
+    `<button class="medal-buy-btn" ${gold >= pkg.gold ? '' : 'disabled'}
+      onclick="buyMedals(${i})">
+      🎖 ${pkg.label}<br>
+      <span style="font-size:11px;color:#aaa;">${pkg.gold} G</span>
+    </button>`
+  ).join('');
+}
+
+function buyMedals(idx) {
+  const pkg = MEDAL_PACKAGES[idx];
+  if (!pkg || gold < pkg.gold) return;
+  gold -= pkg.gold;
+  casinoMedals += pkg.medals;
+  updateCasinoMedalDisp();
+  renderMedalBuy();
+  updatePartyBars();
+  enqueuePopup(`
+    <div class="pop-title">🎖 メダル購入</div>
+    <div class="pop-body">
+      <span class="pop-green">${pkg.medals} 枚</span> 購入！<br>
+      所持メダル: ${casinoMedals} 枚
+    </div>`);
+}
+
+// カジノを出る
+function leaveCasino() {
+  currentFacility = null;
+  encounterLock   = false;
+  showScreen('map-screen');
+  updatePartyBars();
+  drawMap();
+}
 
 // =============================================
 // エンカウントアニメーション（渦巻き）
@@ -4977,9 +5440,27 @@ const AudioEngine = (() => {
       }
       // レベルアップ
       case 'levelup': {
-        [523, 659, 784, 1046, 1318].forEach((f, i) => {
-          playNote(f, 'square', 0.09, t + i * 0.08, sfxGain, 0.45);
+        // ファンファーレ：上昇アルペジオ → 高音連打 → 余韻
+        const lvSeq = [
+          { f:523,  type:'square',   dur:0.10, vol:0.50 },
+          { f:659,  type:'square',   dur:0.10, vol:0.50 },
+          { f:784,  type:'square',   dur:0.10, vol:0.50 },
+          { f:1046, type:'square',   dur:0.14, vol:0.55 },
+          { f:1318, type:'square',   dur:0.10, vol:0.55 },
+          { f:1046, type:'square',   dur:0.08, vol:0.45 },
+          { f:1318, type:'square',   dur:0.20, vol:0.60 },
+          { f:1568, type:'triangle', dur:0.40, vol:0.50 },
+        ];
+        lvSeq.forEach((n, i) => {
+          const st = t + i * 0.10;
+          playNote(n.f, n.type, n.dur, st, sfxGain, n.vol);
+          // ハーモニー（3度下）
+          if (i >= 3) playNote(n.f * 0.75, 'triangle', n.dur, st, sfxGain, n.vol * 0.3);
         });
+        // きらきらノイズ（達成感）
+        for (let s = 0; s < 5; s++) {
+          playNoise(0.05, t + 0.55 + s * 0.06, sfxGain, 0.04);
+        }
         break;
       }
       // 逃走成功
@@ -5027,6 +5508,7 @@ window.showScreen = function(id) {
   if      (id === 'map-screen')    AudioEngine.playMapBgm();
   else if (id === 'battle-screen') AudioEngine.playBattleBgm();
   else if (id === 'facility-screen') AudioEngine.stopBgm();
+  else if (id === 'casino-screen') AudioEngine.stopBgm();
 };
 
 // ─ エンカウント SE ─
