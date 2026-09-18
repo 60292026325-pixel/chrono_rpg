@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Active Time Battle Ver.2</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+        }
+        .battle-field {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        .character-row {
+            margin-bottom: 20px;
+        }
+        .char-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        /* ATBゲージの土台 */
+        .atb-bar-bg {
+            background-color: #444;
+            width: 100%;
+            height: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        /* 充填中のゲージ（緑） */
+        .atb-bar-fill {
+            background-color: #2ecc71;
+            height: 100%;
+            width: 0%;
+            transition: width 0.05s linear;
+        }
+        /* 詠唱中のゲージ（赤） */
+        .atb-bar-fill.casting {
+            background-color: #e74c3c;
+        }
+        /* コマンド選択エリア */
+        .command-panel {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #333;
+            border-radius: 5px;
+            display: none; /* 手番が来るまで非表示 */
+            text-align: center;
+        }
+        .btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn:hover { background-color: #2980b9; }
+        .btn.magic { background-color: #9b59b6; }
+        .btn.magic:hover { background-color: #8e44ad; }
+        /* ログエリア */
+        .log-panel {
+            margin-top: 20px;
+            height: 100px;
+            overflow-y: auto;
+            background-color: #111;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 13px;
+            color: #aaa;
+        }
+        /* 設定スイッチ */
+        .settings {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 15px;
+            font-size: 12px;
+            color: #ccc;
+        }
+    </style>
+</head>
+<body>
+<div class="battle-field">
+    <h2>ATB System Ver.2</h2>
+    
+    <!-- モード設定（ウェイト/アクティブ） -->
+    <div class="settings">
+        <label>
+            <input type="checkbox" id="wait-mode" checked> コマンド選択中に時間を止める (Wait Mode)
+        </label>
+    </div>
+    <!-- キャラクター1（速いキャラ） -->
+    <div class="character-row">
+        <div class="char-info">
+            <span id="p1-name">ヒーロー (すばやさ: 高)</span>
+            <span id="p1-status">Ready</span>
+        </div>
+        <div class="atb-bar-bg">
+            <div id="p1-gauge" class="atb-bar-fill"></div>
+        </div>
+    </div>
+    <!-- キャラクター2（遅いキャラ） -->
+    <div class="character-row">
+        <div class="char-info">
+            <span id="p2-name">ウィザード (すばやさ: 低)</span>
+            <span id="p2-status">Ready</span>
+        </div>
+        <div class="atb-bar-bg">
+            <div id="p2-gauge" class="atb-bar-fill"></div>
+        </div>
+    </div>
+    <!-- コマンド入力パネル -->
+    <div id="command-panel" class="command-panel">
+        <p><strong id="active-char-name">誰か</strong> のターン！コマンドを選んでください</p>
+        <button class="btn" onclick="selectCommand('attack')">たたかう (即時発動)</button>
+        <button class="btn magic" onclick="selectCommand('magic')">魔法 (詠唱あり)</button>
+    </div>
+    <!-- バトルログ -->
+    <div id="log" class="log-panel">戦闘開始しました...<br></div>
+</div>
+
+<script>
+    // キャラクターデータ定義（Ver.2: すばやさと詠唱速度を追加）
+    const characters = [
+        {
+            id: 0,
+            name: "ヒーロー",
+            speed: 1.5,       // 1フレームあたりのゲージ増加量（速い）
+            castSpeed: 2.0,   // 詠唱速度
+            gauge: 0,
+            state: "charge",  // charge(蓄積中), choice(コマンド選択中), cast(詠唱中)
+            domGauge: document.getElementById('p1-gauge'),
+            domStatus: document.getElementById('p1-status')
+        },
+        {
+            id: 1,
+            name: "ウィザード",
+            speed: 0.8,       // 1フレームあたりのゲージ増加量（遅い）
+            castSpeed: 1.0,   // 詠唱速度
+            gauge: 0,
+            state: "charge",
+            domGauge: document.getElementById('p2-gauge'),
+            domStatus: document.getElementById('p2-status')
+        }
+    ];
+
+    let activeCharacter = null; // 現在コマンド入力中のキャラクター
+    let battleInterval = null;
+
+    // ログ出力関数
+    function logMessage(msg) {
+        const logDiv = document.getElementById('log');
+        logDiv.innerHTML += msg + "<br>";
+        logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    // メインのATBタイマーループ (約16msごとに実行、秒間60フレーム想定)
+    function startBattleLoop() {
+        battleInterval = setInterval(() => {
+            const isWaitMode = document.getElementById('wait-mode').checked;
+            
+            // ウェイトモードかつ誰かがコマンド選択中の場合は、全体の時間を止める
+            if (isWaitMode && activeCharacter !== null) {
+                return; 
+            }
+
+            characters.forEach(char => {
+                // 1. ゲージ蓄積フェーズ
+                if (char.state === "charge") {
+                    char.gauge += char.speed;
+                    if (char.gauge >= 100) {
+                        char.gauge = 100;
+                        char.state = "choice";
+                        triggerCommandPanel(char);
+                    }
+                } 
+                // 2. 魔法などの詠唱フェーズ (Ver.2要素)
+                else if (char.state === "cast") {
+                    char.gauge += char.castSpeed;
+                    if (char.gauge >= 100) {
+                        char.gauge = 0;
+                        char.state = "charge";
+                        char.domGauge.classList.remove('casting');
+                        logMessage(`✨ 【${char.name}】 の魔法が発動！大ダメージ！`);
+                    }
+                }
+
+                // 画面のゲージとステータス表示を更新
+                char.domGauge.style.width = char.gauge + "%";
+                updateStatusDisplay(char);
+            });
+        }, 16);
+    }
+
+    // ステータステキストの更新
+    function updateStatusDisplay(char) {
+        if (char.state === "charge") char.domStatus.innerText = "ATB蓄積中...";
+        if (char.state === "choice") char.domStatus.innerText = "コマンド入力待ち！";
+        if (char.state === "cast")   char.domStatus.innerText = "詠唱中... ⚡";
+    }
+
+    // コマンドパネルの表示制御
+    function triggerCommandPanel(char) {
+        // すでに誰かが選択中の場合はキューに溜まる（簡易的に最初に来たキャラを優先）
+        if (activeCharacter === null) {
+            activeCharacter = char;
+            document.getElementById('active-char-name').innerText = char.name;
+            document.getElementById('command-panel').style.display = "block";
+        }
+    }
+
+    // コマンド選択時の処理 (Ver.2要素: 即時発動 vs 詠唱)
+    function selectCommand(type) {
+        if (!activeCharacter) return;
+
+        const char = activeCharacter;
+        document.getElementById('command-panel').style.display = "none";
+        activeCharacter = null; // 入力権を解放
+
+        if (type === 'attack') {
+            logMessage(`⚔️ 【${char.name}】 の攻撃！敵に10のダメージ。`);
+            char.gauge = 0;
+            char.state = "charge";
+        } else if (type === 'magic') {
+            logMessage(`🔮 【${char.name}】 は呪文を唱え始めた！(詠唱開始)`);
+            char.gauge = 0; // ゲージをリセットして詠唱ゲージとして使う
+            char.state = "cast";
+            char.domGauge.classList.add('casting'); // 赤色に変化
+        }
+
+        // 次にコマンド待ちしているキャラがいないかチェック
+        const nextChar = characters.find(c => c.state === "choice");
+        if (nextChar) {
+            triggerCommandPanel(nextChar);
+        }
+    }
+
+    // 起動
+    startBattleLoop();
+</script>
+</body>
+</html>

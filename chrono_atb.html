@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chrono Trigger Style ATB</title>
+    <style>
+        body { font-family: sans-serif; background: #111; color: #fff; padding: 20px; }
+        .battle-screen { max-width: 700px; margin: 0 auto; background: #222; border: 3px solid #444; border-radius: 8px; padding: 20px; }
+
+        /* 簡易配置マップ */
+        .battle-field { height: 180px; background: #333; border-radius: 5px; position: relative; margin-bottom: 20px; border: 1px solid #555; }
+        .unit-dot { position: absolute; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; font-family: monospace; }
+        .player-dot { background: #3498db; }
+        .enemy-dot { background: #e74c3c; }
+
+        /* ステータス & ATB */
+        .party-status { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .char-box { background: #2a2a2a; padding: 10px; border-radius: 5px; border: 1px solid #444; }
+        .char-box.active { border-color: #f1c40f; box-shadow: 0 0 8px #f1c40f; }
+        .atb-bg { background: #555; height: 10px; border-radius: 5px; overflow: hidden; margin-top: 5px; }
+        .atb-fill { background: #2ecc71; height: 100%; width: 0%; transition: width 0.05s linear; }
+        .hp-text { font-size: 12px; color: #aaa; margin-top: 4px; }
+        .hp-text span { color: #2ecc71; font-weight: bold; }
+        .hp-text.low span { color: #e74c3c; }
+        .char-box.dead { opacity: 0.4; }
+        /* 敵ステータスエリア */
+        .enemy-status { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 20px; }
+        .enemy-box { background: #2a1a1a; padding: 8px 10px; border-radius: 5px; border: 1px solid #633; font-size: 12px; }
+        .enemy-box.dead { opacity: 0.4; }
+
+        /* コマンドメニュー */
+        .menu-container { display: flex; gap: 10px; background: #1a1a1a; padding: 15px; border-radius: 5px; display: none; }
+        .menu-column { display: flex; flex-direction: column; gap: 5px; }
+        .btn { background: #333; color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 4px; cursor: pointer; text-align: left; }
+        .btn:hover { background: #444; border-color: #f1c40f; }
+        .btn:disabled { background: #222; color: #555; border-color: #333; cursor: not-allowed; }
+
+        /* バトルログ */
+        .log { background: #000; height: 120px; overflow-y: auto; padding: 10px; border-radius: 5px; font-size: 13px; color: #2ecc71; font-family: monospace; }
+    </style>
+</head>
+<body>
+<div class="battle-screen">
+    <h3 style="margin-top:0; color:#f1c40f;">Chrono Style ATB System</h3>
+
+    <!-- バトルフィールド（位置概念の可視化） -->
+    <div class="battle-field" id="field">
+        <!-- JSでドットを配置 -->
+    </div>
+
+    <!-- 敵ステータス -->
+    <div class="enemy-status">
+        <div class="enemy-box" id="ebox-0">
+            <div>ゾンビ</div>
+            <div class="hp-text">HP: <span id="ehp-0">60</span> / 60</div>
+        </div>
+        <div class="enemy-box" id="ebox-1">
+            <div>スライム</div>
+            <div class="hp-text">HP: <span id="ehp-1">40</span> / 40</div>
+        </div>
+        <div class="enemy-box" id="ebox-2">
+            <div>ゴーレム</div>
+            <div class="hp-text">HP: <span id="ehp-2">120</span> / 120</div>
+        </div>
+        <div class="enemy-box" id="ebox-3">
+            <div>ドラゴン</div>
+            <div class="hp-text">HP: <span id="ehp-3">200</span> / 200</div>
+        </div>
+        <div class="enemy-box" id="ebox-4">
+            <div>がいこつ</div>
+            <div class="hp-text">HP: <span id="ehp-4">80</span> / 80</div>
+        </div>
+    </div>
+
+    <!-- パーティステータス -->
+    <div class="party-status">
+        <div class="char-box" id="box-0">
+            <div>アース (すばやさ:15)</div>
+            <div class="hp-text">HP: <span id="hp-0">120</span> / 120</div>
+            <div class="atb-bg"><div id="gauge-0" class="atb-fill"></div></div>
+        </div>
+        <div class="char-box" id="box-1">
+            <div>ノヴァ (すばやさ:12)</div>
+            <div class="hp-text">HP: <span id="hp-1">100</span> / 100</div>
+            <div class="atb-bg"><div id="gauge-1" class="atb-fill"></div></div>
+        </div>
+        <div class="char-box" id="box-2">
+            <div>スペース (すばやさ:10)</div>
+            <div class="hp-text">HP: <span id="hp-2">90</span> / 90</div>
+            <div class="atb-bg"><div id="gauge-2" class="atb-fill"></div></div>
+        </div>
+    </div>
+
+    <!-- コマンドメニュー（クロノトリガー風レイアウト） -->
+    <div class="menu-container" id="command-menu">
+        <div class="menu-column">
+            <p style="margin:0 0 5px 0; font-size:12px; color:#aaa;"><span id="menu-user-name"></span>の行動</p>
+            <button class="btn" onclick="selectAction('attack')">⚔️ たたかう (単体)</button>
+            <button class="btn" onclick="showTechs()">✨ わざ・魔法</button>
+        </div>
+        <div class="menu-column" id="tech-column" style="display:none; border-left: 1px solid #444; padding-left: 10px;">
+            <p style="margin:0 0 5px 0; font-size:12px; color:#f1c40f;">▼ 技・連携技リスト</p>
+            <div id="tech-list" class="menu-column"></div>
+        </div>
+    </div>
+
+    <!-- ログ -->
+    <div class="log" id="battle-log">戦闘開始！ゲージの蓄積を待っています...<br></div>
+</div>
+
+<script>
+    // キャラクターデータ（クロノトリガー風）
+    const party = [
+        { id: 0, name: "アース",   speed: 1.5, gauge: 0, ready: false, x: 100, y: 50,  hp: 120, maxHp: 120 },
+        { id: 1, name: "ノヴァ",   speed: 1.2, gauge: 0, ready: false, x: 80,  y: 90,  hp: 100, maxHp: 100 },
+        { id: 2, name: "スペース", speed: 1.0, gauge: 0, ready: false, x: 110, y: 130, hp: 90,  maxHp: 90  }
+    ];
+
+    // 敵データ
+    // speed: 敵ATBの蓄積速度、gauge: 現在のATB量
+    const enemies = [
+        { id: 0, name: "ゾンビ",   x: 420, y: 30,  speed: 0.7, gauge: 0, hp: 60,  maxHp: 60  },
+        { id: 1, name: "スライム", x: 470, y: 70,  speed: 1.0, gauge: 0, hp: 40,  maxHp: 40  },
+        { id: 2, name: "ゴーレム", x: 510, y: 110, speed: 0.5, gauge: 0, hp: 120, maxHp: 120 },
+        { id: 3, name: "ドラゴン", x: 450, y: 140, speed: 0.6, gauge: 0, hp: 200, maxHp: 200 },
+        { id: 4, name: "がいこつ", x: 540, y: 50,  speed: 0.8, gauge: 0, hp: 80,  maxHp: 80  }
+    ];
+
+    let currentTurnChar = null;
+
+    // 初期配置の描画
+    function initField() {
+        const field = document.getElementById('field');
+        party.forEach(p => {
+            field.innerHTML += `<div class="unit-dot player-dot" style="left:${p.x}px; top:${p.y}px;" title="${p.name}">${p.name[0]}</div>`;
+        });
+        enemies.forEach(e => {
+            field.innerHTML += `<div class="unit-dot enemy-dot" style="left:${e.x}px; top:${e.y}px;" title="${e.name}">${e.name[0]}</div>`;
+        });
+    }
+
+    // HP表示を更新する（パーティ）
+    function updatePartyHp(char) {
+        const el = document.getElementById(`hp-${char.id}`);
+        const box = document.getElementById(`box-${char.id}`);
+        const hpText = el.closest('.hp-text');
+        el.textContent = Math.max(char.hp, 0);
+        hpText.classList.toggle('low', char.hp <= char.maxHp * 0.3);
+        if (char.hp <= 0) {
+            box.classList.add('dead');
+            char.ready = false;
+            char.gauge = 0;
+            document.getElementById(`gauge-${char.id}`).style.width = "0%";
+        }
+    }
+
+    // HP表示を更新する（敵）
+    function updateEnemyHp(enemy) {
+        const el = document.getElementById(`ehp-${enemy.id}`);
+        const box = document.getElementById(`ebox-${enemy.id}`);
+        el.textContent = Math.max(enemy.hp, 0);
+        if (enemy.hp <= 0) {
+            box.classList.add('dead');
+            el.textContent = '0';
+        }
+    }
+
+    // ログ書き込み
+    function printLog(text) {
+        const log = document.getElementById('battle-log');
+        log.innerHTML += text + "<br>";
+        log.scrollTop = log.scrollHeight;
+    }
+
+    // 敵専用ATBループ（コマンド選択中でも止まらない＝アクティブモード）
+    setInterval(() => {
+        enemies.forEach(enemy => {
+            if (enemy.hp <= 0) return; // 倒れた敵は行動しない
+            enemy.gauge += enemy.speed;
+            if (enemy.gauge >= 100) {
+                enemy.gauge = 0;
+                // 生存しているパーティメンバーからランダムに攻撃対象を選ぶ
+                const alive = party.filter(p => p.hp > 0);
+                if (alive.length === 0) return;
+                const target = alive[Math.floor(Math.random() * alive.length)];
+                const dmg = Math.floor(Math.random() * 10) + 8; // 8〜17ダメージ
+                target.hp -= dmg;
+                updatePartyHp(target);
+                if (target.hp <= 0) {
+                    printLog(`💥 【${enemy.name}】の攻撃！ ${target.name} に ${dmg} のダメージ！ → 戦闘不能！`);
+                } else {
+                    printLog(`💥 【${enemy.name}】の攻撃！ ${target.name} に ${dmg} のダメージ！ (残HP: ${target.hp})`);
+                }
+            }
+        });
+    }, 30);
+
+    // プレイヤーATBループ（ウェイトモード：コマンド選択中は時間停止）
+    setInterval(() => {
+        if (currentTurnChar !== null) return; // 誰かがコマンド選択中は時間が止まる（ウェイト）
+
+        party.forEach(char => {
+            if (!char.ready) {
+                char.gauge += char.speed;
+                if (char.gauge >= 100) {
+                    char.gauge = 100;
+                    char.ready = true;
+                }
+                // 修正①: getElementById の引数をテンプレートリテラルとして正しく渡す
+                document.getElementById(`gauge-${char.id}`).style.width = char.gauge + "%";
+            }
+        });
+
+        // ゲージが溜まったキャラがいればコマンドを開く
+        const nextChar = party.find(p => p.ready);
+        if (nextChar && currentTurnChar === null) {
+            openMenu(nextChar);
+        }
+    }, 30);
+
+    // メニューを開く
+    function openMenu(char) {
+        currentTurnChar = char;
+        // 修正②: getElementById の引数をテンプレートリテラルとして正しく渡す
+        document.getElementById(`box-${char.id}`).classList.add('active');
+        document.getElementById('menu-user-name').innerText = char.name;
+        document.getElementById('command-menu').style.display = 'flex';
+        document.getElementById('tech-column').style.display = 'none';
+    }
+
+    // 「わざ」が押されたら連携技の判定を行う
+    function showTechs() {
+        const techColumn = document.getElementById('tech-column');
+        const techList = document.getElementById('tech-list');
+        techColumn.style.display = 'block';
+        techList.innerHTML = '';
+
+        // 1人技（いつでも出せる）
+        let techs = [];
+        if (currentTurnChar.id === 0) techs.push({ name: "回転斬り",   type: "solo", range: "円範囲",    desc: "自分の周りの敵を巻き込む" });
+        if (currentTurnChar.id === 1) techs.push({ name: "アイス",     type: "solo", range: "単体",      desc: "敵1体に冥属性魔法" });
+        if (currentTurnChar.id === 2) techs.push({ name: "火炎放射",   type: "solo", range: "直線範囲",  desc: "正面一直線の敵を焼き払う" });
+
+        // 🌟 2人技の判定（相方のATBゲージも満タン＝readyである必要がある）
+        if (currentTurnChar.id === 0 || currentTurnChar.id === 1) {
+            const canXStrike = party.find(p => p.id === 0).ready && party.find(p => p.id === 1).ready;
+            // 修正③: partner の値を配列として正しく設定
+            techs.push({ name: "エックス斬り (2人技)",  type: "dual", partner: [0, 1], range: "単体（大ダメージ）", disabled: !canXStrike });
+        }
+        if (currentTurnChar.id === 0 || currentTurnChar.id === 2) {
+            const canFireSword = party.find(p => p.id === 0).ready && party.find(p => p.id === 2).ready;
+            // 修正③: partner の値を配列として正しく設定
+            techs.push({ name: "ファイガソード (2人技)", type: "dual", partner: [0, 2], range: "円範囲（強力）",     disabled: !canFireSword });
+        }
+
+        // 🌟 3人技の判定（3人全員がready状態）
+        const canTriple = party.every(p => p.ready);
+        // 修正③: partner の値を配列として正しく設定
+        techs.push({ name: "ビッグバン (3人技)", type: "triple", partner: [0, 1, 2], range: "全体攻撃", disabled: !canTriple });
+
+        // ボタンの生成
+        techs.forEach(t => {
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            btn.innerHTML = `<strong>${t.name}</strong> <span style="font-size:11px; color:#aaa;">[${t.range}]</span>`;
+            btn.disabled = t.disabled;
+            btn.onclick = () => executeTech(t);
+            techList.appendChild(btn);
+        });
+    }
+
+    // アクションの実行処理
+    function selectAction(type) {
+        if (type === 'attack') {
+            // 生存している敵からランダムに1体選んで攻撃
+            const aliveEnemies = enemies.filter(e => e.hp > 0);
+            if (aliveEnemies.length > 0) {
+                const target = aliveEnemies[Math.floor(Math.random() * aliveEnemies.length)];
+                const dmg = 30;
+                target.hp -= dmg;
+                updateEnemyHp(target);
+                if (target.hp <= 0) {
+                    printLog(`⚔️ 【${currentTurnChar.name}】の攻撃！ 【${target.name}】に ${dmg} のダメージ！ → 撃破！`);
+                } else {
+                    printLog(`⚔️ 【${currentTurnChar.name}】の攻撃！ 【${target.name}】に ${dmg} のダメージ！ (残HP: ${target.hp})`);
+                }
+            }
+            resetCharATB(currentTurnChar);
+            closeMenu();
+        }
+    }
+
+    // 技の実行（連携相手のゲージも同時に消費する！）
+    function executeTech(tech) {
+        // 生存している敵リスト
+        const aliveEnemies = enemies.filter(e => e.hp > 0);
+
+        if (tech.type === 'solo') {
+            const dmg = 45;
+            // 範囲によって複数敵に当てる（簡易：円範囲・直線は全体、単体は1体）
+            const targets = (tech.range === '単体') && aliveEnemies.length > 0
+                ? [aliveEnemies[Math.floor(Math.random() * aliveEnemies.length)]]
+                : aliveEnemies;
+            targets.forEach(t => { t.hp -= dmg; updateEnemyHp(t); });
+            printLog(`✨ 【${currentTurnChar.name}】の『${tech.name}』！ 【${tech.range}】に ${dmg} ダメージ！`);
+            resetCharATB(currentTurnChar);
+        }
+        else if (tech.type === 'dual') {
+            const dmg = 80;
+            const partnerName = party.find(p => p.id === tech.partner[1]).name;
+            aliveEnemies.forEach(t => { t.hp -= dmg; updateEnemyHp(t); });
+            printLog(`🔥 連携技発動！！ 【${party.find(p => p.id === tech.partner[0]).name}＆${partnerName}】の『${tech.name}』！！ 【${tech.range}】に ${dmg} 大ダメージ！`);
+            tech.partner.forEach(id => resetCharATB(party.find(p => p.id === id)));
+        }
+        else if (tech.type === 'triple') {
+            const dmg = 150;
+            aliveEnemies.forEach(t => { t.hp -= dmg; updateEnemyHp(t); });
+            printLog(`🌌 究極連携！！ 三位一体の『${tech.name}』が炸裂！！！ 全敵に ${dmg} ダメージ！`);
+            party.forEach(p => resetCharATB(p));
+        }
+        closeMenu();
+    }
+
+    // ATBのリセット
+    function resetCharATB(char) {
+        char.gauge = 0;
+        char.ready = false;
+        // 修正①②: getElementById の引数をテンプレートリテラルとして正しく渡す
+        document.getElementById(`gauge-${char.id}`).style.width = "0%";
+        document.getElementById(`box-${char.id}`).classList.remove('active');
+    }
+
+    // メニューを閉じる
+    function closeMenu() {
+        document.getElementById('command-menu').style.display = 'none';
+        currentTurnChar = null;
+    }
+
+    initField();
+</script>
+</body>
+</html>

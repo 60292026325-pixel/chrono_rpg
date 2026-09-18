@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chrono Map + ATB Battle</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: sans-serif; background: #111; color: #fff; display: flex; justify-content: center; align-items: flex-start; padding: 20px; }
+        #app { width: 640px; }
+
+        /* ===== マップ画面 ===== */
+        #map-screen { display: block; }
+        #map-title { color: #f1c40f; font-size: 18px; margin-bottom: 8px; }
+        #map-canvas { display: block; border: 2px solid #555; background: #1a2a1a; cursor: none; }
+        #map-info { font-size: 12px; color: #888; margin-top: 6px; }
+        /* エンカウントアニメーション用オーバーレイ */
+        #encounter-overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 640px; height: 400px;
+            pointer-events: none;
+            display: none;
+        }
+
+        /* パーティステータスバー */
+        #party-bar {
+            display: flex; gap: 8px; margin-top: 8px;
+        }
+        .pbar-char {
+            flex: 1; background: #1e1e1e; border: 1px solid #444;
+            border-radius: 6px; padding: 7px 10px; font-size: 12px;
+        }
+        .pbar-name { font-weight: bold; color: #f1c40f; margin-bottom: 3px; }
+        .pbar-lv   { color: #aaa; font-size: 11px; margin-bottom: 3px; }
+        /* HPバー */
+        .pbar-bar-bg  { background: #333; height: 7px; border-radius: 4px; overflow: hidden; margin-bottom: 2px; }
+        .pbar-hp-fill { background: #2ecc71; height: 100%; transition: width 0.3s; }
+        .pbar-hp-fill.low { background: #e74c3c; }
+        /* EXPバー */
+        .pbar-exp-fill { background: #3498db; height: 100%; transition: width 0.4s; }
+        .pbar-nums { color: #777; font-size: 10px; }
+
+        /* レベルアップ / 技習得ポップアップ */
+        #lvup-popup {
+            display: none;
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 2px solid #f1c40f;
+            border-radius: 10px; padding: 20px 30px;
+            text-align: center; z-index: 999;
+            box-shadow: 0 0 30px rgba(241,196,15,0.4);
+            min-width: 260px;
+            animation: popIn 0.25s ease;
+        }
+        @keyframes popIn {
+            from { transform: translate(-50%, -50%) scale(0.7); opacity: 0; }
+            to   { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
+        }
+        #lvup-content .popup-title  { font-size: 22px; color: #f1c40f; font-weight: bold; margin-bottom: 6px; }
+        #lvup-content .popup-name   { font-size: 15px; color: #fff; margin-bottom: 4px; }
+        #lvup-content .popup-detail { font-size: 13px; color: #aaa; }
+        #lvup-content .popup-learn  { font-size: 15px; color: #2ecc71; margin-top: 6px; }
+
+        /* ===== 戦闘画面 ===== */
+        #battle-screen { display: none; background: #222; border: 3px solid #444; border-radius: 8px; padding: 20px; }
+        #battle-title { color: #e74c3c; font-size: 16px; margin-bottom: 12px; }
+
+        /* 敵ステータス */
+        #enemy-status { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+        .enemy-box { background: #2a1a1a; padding: 7px 10px; border-radius: 5px; border: 1px solid #633; font-size: 12px; min-width: 90px; }
+        .enemy-box.dead { opacity: 0.35; }
+
+        /* パーティステータス */
+        .party-status { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+        .char-box { background: #2a2a2a; padding: 10px; border-radius: 5px; border: 1px solid #444; }
+        .char-box.active { border-color: #f1c40f; box-shadow: 0 0 8px #f1c40f; }
+        .char-box.dead { opacity: 0.4; }
+        .atb-bg { background: #555; height: 10px; border-radius: 5px; overflow: hidden; margin-top: 5px; }
+        .atb-fill { background: #2ecc71; height: 100%; width: 0%; transition: width 0.05s linear; }
+        .hp-text { font-size: 12px; color: #aaa; margin-top: 3px; }
+        .hp-text span { color: #2ecc71; font-weight: bold; }
+        .hp-text.low span { color: #e74c3c; }
+
+        /* コマンドメニュー */
+        .menu-container { display: none; flex-wrap: wrap; gap: 10px; background: #1a1a1a; padding: 12px; border-radius: 5px; margin-bottom: 12px; }
+        .menu-column { display: flex; flex-direction: column; gap: 5px; }
+        .btn { background: #333; color: #fff; border: 1px solid #555; padding: 7px 14px; border-radius: 4px; cursor: pointer; text-align: left; font-size: 13px; }
+        .btn:hover { background: #444; border-color: #f1c40f; }
+        .btn:disabled { background: #222; color: #555; border-color: #333; cursor: not-allowed; }
+
+        /* 逃げるボタン */
+        #escape-btn { background: #444; color: #ccc; border: 1px solid #666; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-bottom: 10px; }
+        #escape-btn:hover { background: #555; }
+
+        /* ログ */
+        .log { background: #000; height: 110px; overflow-y: auto; padding: 10px; border-radius: 5px; font-size: 12px; color: #2ecc71; font-family: monospace; }
+
+        /* 勝利オーバーレイ */
+        #result-overlay { display: none; text-align: center; padding: 20px; }
+        #result-overlay h2 { color: #f1c40f; margin-bottom: 10px; }
+        #result-overlay button { background: #3498db; color: #fff; border: none; padding: 10px 30px; border-radius: 5px; cursor: pointer; font-size: 15px; }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div id="encounter-flash"></div>
+
+    <!-- ===== マップ画面 ===== -->
+    <div id="map-screen" style="position:relative;">
+        <div id="map-title">🗺️ フィールドマップ</div>
+        <div style="position:relative; display:inline-block;">
+            <canvas id="map-canvas" width="640" height="400"></canvas>
+            <canvas id="encounter-overlay" width="640" height="400"></canvas>
+        </div>
+        <div id="map-info">矢印キー or WASD で移動　草むら(🌿)でエンカウントあり</div>
+
+        <!-- パーティステータスバー（マップ画面常時表示） -->
+        <div id="party-bar">
+            <div class="pbar-char" id="pbar-0"></div>
+            <div class="pbar-char" id="pbar-1"></div>
+            <div class="pbar-char" id="pbar-2"></div>
+        </div>
+    </div>
+
+    <!-- レベルアップ / 技習得 ポップアップ -->
+    <div id="lvup-popup">
+        <div id="lvup-content"></div>
+    </div>
+
+    <!-- ===== 戦闘画面 ===== -->
+    <div id="battle-screen">
+        <div id="battle-title">⚔️ エンカウント！</div>
+        <div id="enemy-status"></div>
+        <div class="party-status">
+            <div class="char-box" id="box-0">
+                <div>アース (SPD:15)</div>
+                <div class="hp-text">HP: <span id="hp-0">120</span> / 120</div>
+                <div class="atb-bg"><div id="gauge-0" class="atb-fill"></div></div>
+            </div>
+            <div class="char-box" id="box-1">
+                <div>ノヴァ (SPD:12)</div>
+                <div class="hp-text">HP: <span id="hp-1">100</span> / 100</div>
+                <div class="atb-bg"><div id="gauge-1" class="atb-fill"></div></div>
+            </div>
+            <div class="char-box" id="box-2">
+                <div>スペース (SPD:10)</div>
+                <div class="hp-text">HP: <span id="hp-2">90</span> / 90</div>
+                <div class="atb-bg"><div id="gauge-2" class="atb-fill"></div></div>
+            </div>
+        </div>
+        <button id="escape-btn" onclick="tryEscape()">🏃 にげる</button>
+        <div class="menu-container" id="command-menu">
+            <div class="menu-column">
+                <p style="margin:0 0 5px; font-size:12px; color:#aaa;"><span id="menu-user-name"></span> の行動</p>
+                <button class="btn" onclick="selectAction('attack')">⚔️ たたかう</button>
+                <button class="btn" onclick="showTechs()">✨ わざ・魔法</button>
+            </div>
+            <div class="menu-column" id="tech-column" style="display:none; border-left:1px solid #444; padding-left:10px;">
+                <p style="margin:0 0 5px; font-size:12px; color:#f1c40f;">▼ 技リスト</p>
+                <div id="tech-list" class="menu-column"></div>
+            </div>
+        </div>
+        <div id="result-overlay">
+            <h2 id="result-text"></h2>
+            <button onclick="returnToMap()">マップに戻る</button>
+        </div>
+        <div class="log" id="battle-log"></div>
+    </div>
+</div>
+<script>
+// =============================================
+// マップ定義
+// タイル種別: 0=草原(歩行可・エンカウントなし), 1=草むら(エンカウントあり),
+//             2=木(通行不可), 3=水(通行不可), 4=道(歩行可・エンカウントなし)
+// =============================================
+const TILE = { GRASS:0, BUSH:1, TREE:2, WATER:3, ROAD:4 };
+const TILE_SIZE = 32;
+const MAP_COLS = 20;
+const MAP_ROWS = 12;
+
+// prettier-ignore
+const MAP_DATA = [
+    [2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2],
+    [2,0,0,0,0,1,1,1,0,0,0,0,0,0,0,1,1,0,0,2],
+    [2,0,4,4,4,4,0,1,0,2,2,0,0,0,0,1,0,0,0,2],
+    [2,0,4,2,2,4,0,1,0,2,0,0,1,1,0,0,0,0,0,2],
+    [2,0,4,2,0,4,4,4,4,4,4,4,4,4,0,0,1,1,0,2],
+    [2,0,4,0,0,0,0,0,0,4,0,0,0,4,0,0,1,0,0,2],
+    [2,0,0,0,1,1,0,0,0,4,0,3,3,4,0,0,0,0,0,2],
+    [2,0,0,1,1,1,0,0,0,4,0,3,3,4,0,0,0,0,0,2],
+    [2,0,0,1,0,0,0,0,0,4,4,4,4,4,0,0,1,1,0,2],
+    [2,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,1,0,0,2],
+    [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
+    [2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2],
+];
+
+// タイル色
+const TILE_COLOR = {
+    [TILE.GRASS]: '#3a6b35',
+    [TILE.BUSH]:  '#2d8a2d',
+    [TILE.TREE]:  '#1a4a1a',
+    [TILE.WATER]: '#1a4a7a',
+    [TILE.ROAD]:  '#8b7355',
+};
+
+// =============================================
+// プレイヤー（アース）
+// =============================================
+const player = { col: 2, row: 2, stepCount: 0 };
+
+// 移動可能タイル判定
+function isWalkable(col, row) {
+    if (row < 0 || row >= MAP_ROWS || col < 0 || col >= MAP_COLS) return false;
+    const t = MAP_DATA[row][col];
+    return t !== TILE.TREE && t !== TILE.WATER;
+}
+
+// エンカウント判定（草むらのみ、約20%）
+function checkEncounter(col, row) {
+    if (MAP_DATA[row][col] === TILE.BUSH) {
+        return Math.random() < 0.20;
+    }
+    return false;
+}
+
+// =============================================
+// マップ描画
+// =============================================
+const canvas = document.getElementById('map-canvas');
+const ctx = canvas.getContext('2d');
+
+function drawMap() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let r = 0; r < MAP_ROWS; r++) {
+        for (let c = 0; c < MAP_COLS; c++) {
+            ctx.fillStyle = TILE_COLOR[MAP_DATA[r][c]];
+            ctx.fillRect(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            // 草むらに模様
+            if (MAP_DATA[r][c] === TILE.BUSH) {
+                ctx.fillStyle = 'rgba(0,180,0,0.25)';
+                ctx.fillText('🌿', c * TILE_SIZE + 6, r * TILE_SIZE + 22);
+            }
+            // 水に模様
+            if (MAP_DATA[r][c] === TILE.WATER) {
+                ctx.fillStyle = 'rgba(100,180,255,0.3)';
+                ctx.fillRect(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            }
+        }
+    }
+    // タイル境界線（薄く）
+    ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+    ctx.lineWidth = 0.5;
+    for (let r = 0; r <= MAP_ROWS; r++) {
+        ctx.beginPath(); ctx.moveTo(0, r * TILE_SIZE); ctx.lineTo(canvas.width, r * TILE_SIZE); ctx.stroke();
+    }
+    for (let c = 0; c <= MAP_COLS; c++) {
+        ctx.beginPath(); ctx.moveTo(c * TILE_SIZE, 0); ctx.lineTo(c * TILE_SIZE, canvas.height); ctx.stroke();
+    }
+    // プレイヤー（青い円 + "ア"）
+    const px = player.col * TILE_SIZE + TILE_SIZE / 2;
+    const py = player.row * TILE_SIZE + TILE_SIZE / 2;
+    ctx.beginPath();
+    ctx.arc(px, py, 12, 0, Math.PI * 2);
+    ctx.fillStyle = '#3498db';
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('ア', px, py);
+}
+
+// =============================================
+// キー入力
+// =============================================
+const keys = {};
+document.addEventListener('keydown', e => {
+    if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d'].includes(e.key)) {
+        e.preventDefault();
+    }
+    keys[e.key] = true;
+});
+document.addEventListener('keyup', e => { keys[e.key] = false; });
+
+let moveTimer = 0;
+const MOVE_INTERVAL = 160; // ms間隔で移動
+
+function handleMapInput(delta) {
+    if (document.getElementById('map-screen').style.display === 'none') return;
+    moveTimer += delta;
+    if (moveTimer < MOVE_INTERVAL) return;
+    moveTimer = 0;
+
+    let dc = 0, dr = 0;
+    if (keys['ArrowUp']    || keys['w']) dr = -1;
+    if (keys['ArrowDown']  || keys['s']) dr =  1;
+    if (keys['ArrowLeft']  || keys['a']) dc = -1;
+    if (keys['ArrowRight'] || keys['d']) dc =  1;
+    if (dc === 0 && dr === 0) return;
+
+    const nc = player.col + dc;
+    const nr = player.row + dr;
+    if (!isWalkable(nc, nr)) return;
+
+    player.col = nc;
+    player.row = nr;
+    player.stepCount++;
+    drawMap();
+
+    if (checkEncounter(nc, nr)) {
+        setTimeout(startBattle, 80);
+    }
+}
+
+// =============================================
+// エンカウント・戦闘開始
+// =============================================
+const ENEMY_POOL = [
+    { name: 'ゾンビ',   hp: 60,  maxHp: 60,  speed: 0.7, gauge: 0, atk: [8,14],  expReward: 30  },
+    { name: 'スライム', hp: 40,  maxHp: 40,  speed: 1.0, gauge: 0, atk: [5,10],  expReward: 18  },
+    { name: 'ゴーレム', hp: 120, maxHp: 120, speed: 0.5, gauge: 0, atk: [12,20], expReward: 65  },
+    { name: 'ドラゴン', hp: 200, maxHp: 200, speed: 0.6, gauge: 0, atk: [18,28], expReward: 120 },
+    { name: 'がいこつ', hp: 80,  maxHp: 80,  speed: 0.8, gauge: 0, atk: [8,16],  expReward: 40  },
+];
+
+let battleEnemies = [];
+let battleIntervalId1 = null;
+let battleIntervalId2 = null;
+let currentTurnChar = null;
+let battleEnded = false;
+
+// パーティデータ（戦闘をまたいでHP継続）
+// lv: 現在レベル, exp: 累積経験値, nextExp: 次のLvまでの必要経験値
+const party = [
+    { id: 0, name: 'アース',   speed: 1.5, gauge: 0, ready: false, hp: 120, maxHp: 120, lv: 1, exp: 0, nextExp: 100 },
+    { id: 1, name: 'ノヴァ',   speed: 1.2, gauge: 0, ready: false, hp: 100, maxHp: 100, lv: 1, exp: 0, nextExp: 100 },
+    { id: 2, name: 'スペース', speed: 1.0, gauge: 0, ready: false, hp: 90,  maxHp: 90,  lv: 1, exp: 0, nextExp: 100 },
+];
+
+// =============================================
+// 習得技テーブル
+// キャラid → [{ reqLv: 習得レベル, ...技定義 }]
+// ※技の内容はあとで埋める。現状は各キャラ初期技のみ定義。
+// =============================================
+const learnableTechs = {
+    0: [ // アース
+        { reqLv: 1,  name: '回転斬り',         type: 'solo',   range: '円範囲',   basePower: 40, variance: 12, missRate: 0.08 },
+        // Lv X で 技名 追加予定
+    ],
+    1: [ // ノヴァ
+        { reqLv: 1,  name: 'アイス',            type: 'solo',   range: '単体',     basePower: 55, variance: 15, missRate: 0.12 },
+        // Lv X で 技名 追加予定
+    ],
+    2: [ // スペース
+        { reqLv: 1,  name: '火炎放射',          type: 'solo',   range: '直線範囲', basePower: 42, variance: 10, missRate: 0.10 },
+        // Lv X で 技名 追加予定
+    ],
+    // 連携技（両方のメンバーが reqLv に達していれば使用可能）
+    dual: [
+        { reqLv: [1, 1], partner: [0, 1], name: 'エックス斬り(2人技)',   type: 'dual', range: '単体', basePower: 80,  variance: 20, missRate: 0.05 },
+        { reqLv: [1, 1], partner: [0, 2], name: 'ファイガソード(2人技)', type: 'dual', range: '全体', basePower: 75,  variance: 18, missRate: 0.06 },
+        // Lv X で 連携技 追加予定
+    ],
+    triple: [
+        { reqLv: [1, 1, 1], partner: [0, 1, 2], name: 'ビッグバン(3人技)', type: 'triple', range: '全体', basePower: 140, variance: 30, missRate: 0.03 },
+        // Lv X で 3人技 追加予定
+    ],
+};
+
+function pickEnemies() {
+    // ランダムで1〜3体選出（重複あり）
+    const count = Math.floor(Math.random() * 3) + 1;
+    const result = [];
+    for (let i = 0; i < count; i++) {
+        const base = ENEMY_POOL[Math.floor(Math.random() * ENEMY_POOL.length)];
+        // 独立したコピーを作成
+        result.push({ ...base, id: i, gauge: 0, hp: base.maxHp });
+    }
+    return result;
+}
+
+// =============================================
+// エンカウントアニメーション（渦巻き塗りつぶし）
+// =============================================
+const overlayCanvas = document.getElementById('encounter-overlay');
+const octx = overlayCanvas.getContext('2d');
+const OW = overlayCanvas.width;
+const OH = overlayCanvas.height;
+
+function runEncounterAnimation(onComplete) {
+    overlayCanvas.style.display = 'block';
+    octx.clearRect(0, 0, OW, OH);
+
+    const cx = OW / 2, cy = OH / 2;
+    // 中心から四隅までの最大半径
+    const maxRadius = Math.sqrt(cx * cx + cy * cy) + 10;
+    const DURATION = 900;    // アニメーション総時間(ms)
+    const SPIRALS  = 3;      // 渦の周回数
+    const SEGMENTS = 180;    // 1周を何分割するか（滑らかさ）
+    const totalSteps = SPIRALS * SEGMENTS;
+
+    let step = 0;
+    // 回転ごとに描く扇形の色（明→暗のグラデーション）
+    const colors = ['#ffffff','#cccccc','#999999','#555555','#000000'];
+
+    const interval = setInterval(() => {
+        if (step >= totalSteps) {
+            // 最後に全体を黒で完全塗りつぶし
+            octx.fillStyle = '#000';
+            octx.fillRect(0, 0, OW, OH);
+            clearInterval(interval);
+            // 少し待ってからコールバック
+            setTimeout(() => {
+                overlayCanvas.style.display = 'none';
+                octx.clearRect(0, 0, OW, OH);
+                onComplete();
+            }, 120);
+            return;
+        }
+
+        const progress = step / totalSteps;           // 0〜1
+        const angle = (step / SEGMENTS) * Math.PI * 2; // 現在の角度
+        const radius = maxRadius * (step / totalSteps); // 半径は線形に拡大
+
+        // 色は進行に合わせて暗く
+        const colorIdx = Math.min(Math.floor(progress * colors.length), colors.length - 1);
+        octx.fillStyle = colors[colorIdx];
+
+        // 扇形を描く（中心→外側）
+        const sliceAngle = (2 * Math.PI) / SEGMENTS;
+        octx.beginPath();
+        octx.moveTo(cx, cy);
+        octx.arc(cx, cy, radius, angle - sliceAngle * 0.5, angle + sliceAngle * 1.5);
+        octx.closePath();
+        octx.fill();
+
+        step++;
+    }, DURATION / totalSteps);
+}
+
+function startBattle() {
+    // エンカウントアニメーションを再生してから戦闘画面へ
+    runEncounterAnimation(_initBattle);
+}
+
+function _initBattle() {
+    battleEnemies = pickEnemies();
+    battleEnded = false;
+    currentTurnChar = null;
+
+    // パーティのATBリセット（HPは継続）
+    party.forEach(p => { p.gauge = 0; p.ready = false; });
+
+    // 敵ステータスUI生成
+    const es = document.getElementById('enemy-status');
+    es.innerHTML = '';
+    battleEnemies.forEach(e => {
+        es.innerHTML += `
+            <div class="enemy-box" id="ebox-${e.id}">
+                <div>${e.name}</div>
+                <div class="hp-text">HP: <span id="ehp-${e.id}">${e.hp}</span> / ${e.maxHp}</div>
+            </div>`;
+    });
+
+    // パーティHP更新
+    party.forEach(p => updatePartyHp(p));
+    party.forEach(p => {
+        document.getElementById(`gauge-${p.id}`).style.width = '0%';
+        document.getElementById(`box-${p.id}`).classList.remove('active', 'dead');
+        if (p.hp <= 0) document.getElementById(`box-${p.id}`).classList.add('dead');
+    });
+
+    // ログクリア
+    const log = document.getElementById('battle-log');
+    log.innerHTML = '';
+    const names = battleEnemies.map(e => e.name).join('、');
+    printLog(`⚡ ${names} があらわれた！`);
+
+    // 画面切り替え
+    document.getElementById('map-screen').style.display = 'none';
+    document.getElementById('battle-screen').style.display = 'block';
+    document.getElementById('command-menu').style.display = 'none';
+    document.getElementById('result-overlay').style.display = 'none';
+    document.getElementById('escape-btn').style.display = 'inline-block';
+
+    startBattleLoops();
+}
+
+// =============================================
+// 戦闘ループ
+// =============================================
+function startBattleLoops() {
+    // 敵ATBループ（常に動く）
+    battleIntervalId1 = setInterval(() => {
+        if (battleEnded) return;
+        battleEnemies.forEach(enemy => {
+            if (enemy.hp <= 0) return;
+            enemy.gauge += enemy.speed;
+            if (enemy.gauge >= 100) {
+                enemy.gauge = 0;
+                const alive = party.filter(p => p.hp > 0);
+                if (alive.length === 0) return;
+                const target = alive[Math.floor(Math.random() * alive.length)];
+                // 敵攻撃: atkの中間値を basePower、幅の半分を variance として calcDamage に渡す
+                const base = Math.floor((enemy.atk[0] + enemy.atk[1]) / 2);
+                const vari = Math.floor((enemy.atk[1] - enemy.atk[0]) / 2);
+                const res = calcDamage(base, vari, 0.08);
+                if (!res.isMiss) { target.hp -= res.dmg; }
+                updatePartyHp(target);
+                const label = dmgLabel(res);
+                printLog((!res.isMiss && target.hp <= 0)
+                    ? `💥 【${enemy.name}】の攻撃！ ${target.name} に ${label} → 戦闘不能！`
+                    : `💥 【${enemy.name}】の攻撃！ ${target.name} に ${label}${!res.isMiss ? ` (残HP:${Math.max(target.hp,0)})` : ''}`);
+                checkPartyWipe();
+            }
+        });
+    }, 30);
+
+    // プレイヤーATBループ（コマンド選択中は停止）
+    battleIntervalId2 = setInterval(() => {
+        if (battleEnded) return;
+        if (currentTurnChar !== null) return;
+        party.forEach(char => {
+            if (char.hp <= 0 || char.ready) return;
+            char.gauge += char.speed;
+            if (char.gauge >= 100) { char.gauge = 100; char.ready = true; }
+            document.getElementById(`gauge-${char.id}`).style.width = char.gauge + '%';
+        });
+        const next = party.find(p => p.ready && p.hp > 0);
+        if (next) openMenu(next);
+    }, 30);
+}
+
+function stopBattleLoops() {
+    clearInterval(battleIntervalId1);
+    clearInterval(battleIntervalId2);
+}
+
+// =============================================
+// HP更新
+// =============================================
+function updatePartyHp(char) {
+    const el = document.getElementById(`hp-${char.id}`);
+    if (!el) return;
+    el.textContent = Math.max(char.hp, 0);
+    el.closest('.hp-text').classList.toggle('low', char.hp > 0 && char.hp <= char.maxHp * 0.3);
+    const box = document.getElementById(`box-${char.id}`);
+    if (char.hp <= 0) {
+        box.classList.add('dead');
+        char.ready = false; char.gauge = 0;
+        document.getElementById(`gauge-${char.id}`).style.width = '0%';
+        if (currentTurnChar && currentTurnChar.id === char.id) {
+            document.getElementById('command-menu').style.display = 'none';
+            currentTurnChar = null;
+        }
+    }
+}
+
+function updateEnemyHp(enemy) {
+    const el = document.getElementById(`ehp-${enemy.id}`);
+    const box = document.getElementById(`ebox-${enemy.id}`);
+    if (!el) return;
+    el.textContent = Math.max(enemy.hp, 0);
+    if (enemy.hp <= 0) box.classList.add('dead');
+}
+
+// =============================================
+// 勝敗判定
+// =============================================
+function checkVictory() {
+    if (battleEnemies.every(e => e.hp <= 0)) {
+        battleEnded = true;
+        stopBattleLoops();
+        document.getElementById('command-menu').style.display = 'none';
+        document.getElementById('escape-btn').style.display = 'none';
+        printLog('🎉 全ての敵を倒した！勝利！');
+        // 経験値を計算してから結果表示
+        setTimeout(() => {
+            grantExp();
+            setTimeout(() => showResult('🎉 勝利！'), 800);
+        }, 400);
+    }
+}
+
+// =============================================
+// 経験値・レベルアップ処理
+// =============================================
+
+// Lvから次のLvまでの必要経験値（指数的に増加）
+function calcNextExp(lv) {
+    return Math.floor(100 * Math.pow(1.4, lv - 1));
+}
+
+// レベルアップ時のステータス成長
+function applyLvUpGrowth(char) {
+    char.maxHp  += Math.floor(10 + char.id * 3 + Math.random() * 6); // HPは+10〜18程度
+    char.speed  += 0.05;                                               // すばやさ微増
+    char.hp      = char.maxHp;                                         // HP全回復
+}
+
+function grantExp() {
+    // 生存しているパーティメンバーのみ経験値を得る
+    const aliveParty = party.filter(p => p.hp > 0);
+    if (aliveParty.length === 0) return;
+
+    // 倒した敵の合計経験値をパーティ人数で均等分配
+    const totalExp = battleEnemies.reduce((sum, e) => sum + (e.expReward || 0), 0);
+    const expEach  = Math.floor(totalExp / aliveParty.length);
+    printLog(`✨ ${totalExp} EXP 獲得！（1人あたり ${expEach} EXP）`);
+
+    aliveParty.forEach(char => {
+        char.exp += expEach;
+        printLog(`  ${char.name}：EXP +${expEach} → 累計 ${char.exp} / ${char.nextExp}`);
+
+        // レベルアップ（複数回上がる場合もループ）
+        while (char.exp >= char.nextExp) {
+            char.exp     -= char.nextExp;
+            char.lv      += 1;
+            char.nextExp  = calcNextExp(char.lv);
+            applyLvUpGrowth(char);
+
+            printLog(`🌟 【${char.name}】 Lv ${char.lv - 1} → Lv ${char.lv} にレベルアップ！ HP+増 MaxHP:${char.maxHp}`);
+            showLvUpPopup(char);
+
+            // 技の習得チェック
+            checkLearnTechs(char);
+        }
+
+        // HP・EXPバーをUIに反映
+        updatePartyHp(char);
+        updatePartyStatusBar(char);
+    });
+}
+
+// 新しくその Lv で覚える技を通知する
+function checkLearnTechs(char) {
+    const techs = learnableTechs[char.id] || [];
+    techs.forEach(t => {
+        if (t.reqLv === char.lv) {
+            printLog(`💡 【${char.name}】が『${t.name}』を覚えた！`);
+            showLearnPopup(char.name, t.name);
+        }
+    });
+}
+
+function checkPartyWipe() {
+    if (party.every(p => p.hp <= 0)) {
+        battleEnded = true;
+        stopBattleLoops();
+        document.getElementById('command-menu').style.display = 'none';
+        document.getElementById('escape-btn').style.display = 'none';
+        printLog('💀 全滅...');
+        setTimeout(() => showResult('💀 全滅...'), 600);
+    }
+}
+
+function showResult(text) {
+    const ov = document.getElementById('result-overlay');
+    document.getElementById('result-text').textContent = text;
+    ov.style.display = 'block';
+}
+
+// =============================================
+// ログ
+// =============================================
+function printLog(text) {
+    const log = document.getElementById('battle-log');
+    log.innerHTML += text + '<br>';
+    log.scrollTop = log.scrollHeight;
+}
+
+// =============================================
+// コマンドメニュー
+// =============================================
+function openMenu(char) {
+    currentTurnChar = char;
+    document.getElementById(`box-${char.id}`).classList.add('active');
+    document.getElementById('menu-user-name').textContent = char.name;
+    document.getElementById('command-menu').style.display = 'flex';
+    document.getElementById('tech-column').style.display = 'none';
+}
+
+// =============================================
+// ダメージ計算（乱数 + ミス判定）
+// basePower: 基準ダメージ, variance: ±ブレ幅
+// missRate: ミス率(0.0〜1.0), critRate: クリティカル率
+// 戻り値: { dmg: number, isMiss: bool, isCrit: bool }
+// =============================================
+function calcDamage(basePower, variance, missRate = 0.10, critRate = 0.08) {
+    if (Math.random() < missRate) return { dmg: 0, isMiss: true, isCrit: false };
+    const isCrit = Math.random() < critRate;
+    const roll = Math.floor(Math.random() * (variance * 2 + 1)) - variance; // -variance 〜 +variance
+    let dmg = Math.max(1, basePower + roll);
+    if (isCrit) dmg = Math.floor(dmg * 1.5);
+    return { dmg, isMiss: false, isCrit };
+}
+
+// ダメージ結果をログ文字列に変換するヘルパー
+function dmgLabel(res) {
+    if (res.isMiss) return 'MISS！';
+    if (res.isCrit) return `${res.dmg} ダメージ ✨クリティカル！`;
+    return `${res.dmg} ダメージ`;
+}
+
+function selectAction(type) {
+    if (!currentTurnChar) return;
+    if (type === 'attack') {
+        const alive = battleEnemies.filter(e => e.hp > 0);
+        if (alive.length > 0) {
+            const t = alive[Math.floor(Math.random() * alive.length)];
+            // たたかう: 基準28、ブレ±10
+            const res = calcDamage(28, 10);
+            if (!res.isMiss) { t.hp -= res.dmg; updateEnemyHp(t); }
+            const suffix = t.hp <= 0 ? ' → 撃破！' : ` (残HP:${Math.max(t.hp,0)})`;
+            printLog(`⚔️ 【${currentTurnChar.name}】の攻撃！ 【${t.name}】に ${dmgLabel(res)}${res.isMiss ? '' : suffix}`);
+            checkVictory();
+        }
+        resetCharATB(currentTurnChar);
+        closeMenu();
+    }
+}
+
+function showTechs() {
+    document.getElementById('tech-column').style.display = 'block';
+    const list = document.getElementById('tech-list');
+    list.innerHTML = '';
+    const char = currentTurnChar;
+    const techs = [];
+
+    // 1人技：reqLv <= 現在Lv のものだけ表示
+    (learnableTechs[char.id] || []).forEach(t => {
+        if (char.lv >= t.reqLv) techs.push({ ...t });
+    });
+
+    // 2人連携技：両パートナーが reqLv に達しており、どちらかが currentTurnChar
+    (learnableTechs.dual || []).forEach(t => {
+        if (!t.partner.includes(char.id)) return;
+        const [idA, idB] = t.partner;
+        const pA = party.find(p => p.id === idA);
+        const pB = party.find(p => p.id === idB);
+        const lvOk = pA.lv >= t.reqLv[0] && pB.lv >= t.reqLv[1];
+        const readyOk = pA.ready && pB.ready;
+        techs.push({ ...t, disabled: !readyOk, _lvLocked: !lvOk });
+    });
+
+    // 3人連携技：全員が reqLv に達している場合のみ表示
+    (learnableTechs.triple || []).forEach(t => {
+        const lvOk = t.partner.every((id, i) => party.find(p => p.id === id).lv >= t.reqLv[i]);
+        const readyOk = t.partner.every(id => party.find(p => p.id === id).ready);
+        techs.push({ ...t, disabled: !readyOk, _lvLocked: !lvOk });
+    });
+
+    if (techs.length === 0) {
+        list.innerHTML = '<span style="font-size:12px;color:#888;">覚えている技がない</span>';
+        return;
+    }
+
+    techs.forEach(t => {
+        if (t._lvLocked) return; // Lv未達の技はボタン自体を表示しない
+        const btn = document.createElement('button');
+        btn.className = 'btn';
+        const preview = `${t.basePower - t.variance}〜${t.basePower + t.variance}`;
+        btn.innerHTML = `<strong>${t.name}</strong> <span style="font-size:11px;color:#aaa">[${t.range}] ATK:${preview}</span>`;
+        btn.disabled = !!t.disabled;
+        btn.onclick = () => executeTech(t);
+        list.appendChild(btn);
+    });
+}
+
+function executeTech(tech) {
+    const alive = battleEnemies.filter(e => e.hp > 0);
+    const targets = (tech.range === '単体' && alive.length > 0)
+        ? [alive[Math.floor(Math.random() * alive.length)]]
+        : alive;
+
+    // 対象ごとに個別に乱数判定
+    const results = targets.map(t => {
+        const res = calcDamage(tech.basePower, tech.variance, tech.missRate);
+        if (!res.isMiss) { t.hp -= res.dmg; updateEnemyHp(t); }
+        return { name: t.name, res };
+    });
+    const logParts = results.map(r => `【${r.name}】${dmgLabel(r.res)}`).join('、');
+
+    if (tech.type === 'solo') {
+        printLog(`✨ 【${currentTurnChar.name}】の『${tech.name}』！ → ${logParts}`);
+        resetCharATB(currentTurnChar);
+    } else if (tech.type === 'dual') {
+        const names = tech.partner.map(id => party.find(p=>p.id===id).name).join('＆');
+        printLog(`🔥 連携技【${names}】の『${tech.name}』！ → ${logParts}`);
+        tech.partner.forEach(id => resetCharATB(party.find(p=>p.id===id)));
+    } else {
+        printLog(`🌌 究極連携『${tech.name}』炸裂！ → ${logParts}`);
+        party.forEach(p => resetCharATB(p));
+    }
+    checkVictory();
+    closeMenu();
+}
+
+function resetCharATB(char) {
+    char.gauge = 0; char.ready = false;
+    document.getElementById(`gauge-${char.id}`).style.width = '0%';
+    document.getElementById(`box-${char.id}`).classList.remove('active');
+}
+
+function closeMenu() {
+    document.getElementById('command-menu').style.display = 'none';
+    currentTurnChar = null;
+}
+
+// =============================================
+// にげる
+// =============================================
+function tryEscape() {
+    if (battleEnded) return;
+    if (Math.random() < 0.5) {
+        printLog('🏃 逃げ出した！');
+        battleEnded = true;
+        stopBattleLoops();
+        setTimeout(returnToMap, 600);
+    } else {
+        printLog('💨 逃げられなかった！');
+    }
+}
+
+// =============================================
+// パーティステータスバー更新（マップ画面）
+// =============================================
+function updatePartyStatusBar(char) {
+    const el = document.getElementById(`pbar-${char.id}`);
+    if (!el) return;
+    const hpPct  = Math.max(0, Math.min(100, (char.hp / char.maxHp) * 100));
+    const expPct = Math.min(100, (char.exp / char.nextExp) * 100);
+    const isLow  = char.hp <= char.maxHp * 0.3;
+    el.innerHTML = `
+        <div class="pbar-name">${char.name}</div>
+        <div class="pbar-lv">Lv ${char.lv} &nbsp; HP ${Math.max(0,char.hp)} / ${char.maxHp}</div>
+        <div class="pbar-bar-bg">
+            <div class="pbar-hp-fill ${isLow ? 'low' : ''}" style="width:${hpPct}%"></div>
+        </div>
+        <div class="pbar-bar-bg">
+            <div class="pbar-exp-fill" style="width:${expPct}%"></div>
+        </div>
+        <div class="pbar-nums">EXP ${char.exp} / ${char.nextExp}</div>`;
+}
+
+function updateAllStatusBars() {
+    party.forEach(p => updatePartyStatusBar(p));
+}
+
+// =============================================
+// ポップアップ表示キュー（連続レベルアップを順番に表示）
+// =============================================
+const popupQueue = [];
+let popupShowing = false;
+
+function enqueuePopup(html) {
+    popupQueue.push(html);
+    if (!popupShowing) showNextPopup();
+}
+
+function showNextPopup() {
+    if (popupQueue.length === 0) { popupShowing = false; return; }
+    popupShowing = true;
+    const html = popupQueue.shift();
+    const popup = document.getElementById('lvup-popup');
+    document.getElementById('lvup-content').innerHTML = html;
+    popup.style.display = 'block';
+    // 2秒後に自動で次へ
+    setTimeout(() => {
+        popup.style.display = 'none';
+        showNextPopup();
+    }, 2000);
+}
+
+function showLvUpPopup(char) {
+    enqueuePopup(`
+        <div class="popup-title">⭐ LEVEL UP!</div>
+        <div class="popup-name">${char.name}</div>
+        <div class="popup-detail">Lv <strong>${char.lv - 1}</strong> → Lv <strong style="color:#f1c40f">${char.lv}</strong></div>
+        <div class="popup-detail">MaxHP: ${char.maxHp}</div>`);
+}
+
+function showLearnPopup(charName, techName) {
+    enqueuePopup(`
+        <div class="popup-title">💡 技習得！</div>
+        <div class="popup-name">${charName}</div>
+        <div class="popup-learn">『${techName}』を覚えた！</div>`);
+}
+
+// =============================================
+// マップに戻る
+// =============================================
+function returnToMap() {
+    stopBattleLoops();
+    // 全滅した場合はHPを全回復してリセット
+    if (party.every(p => p.hp <= 0)) {
+        party.forEach(p => { p.hp = p.maxHp; });
+        printLog('（HP全回復してマップに戻った）');
+    }
+    document.getElementById('battle-screen').style.display = 'none';
+    document.getElementById('map-screen').style.display = 'block';
+    updateAllStatusBars();
+    drawMap();
+}
+
+// =============================================
+// メインループ（requestAnimationFrame）
+// =============================================
+let lastTime = 0;
+function mainLoop(timestamp) {
+    const delta = timestamp - lastTime;
+    lastTime = timestamp;
+    handleMapInput(delta);
+    requestAnimationFrame(mainLoop);
+}
+
+// 起動
+drawMap();
+updateAllStatusBars();
+requestAnimationFrame(mainLoop);
+</script>
+</body>
+</html>
