@@ -209,65 +209,245 @@ h3{color:#f1c40f;margin-bottom:8px;font-size:14px;}
 .order-btn.active.batchi{border-color:#2ecc71;color:#2ecc71;background:#1a3a1a;}
 .order-btn.active.inochi{border-color:#3498db;color:#3498db;background:#1a2a3a;}
 
-/* ===== カジノ画面 ===== */
-#casino-screen{background:linear-gradient(180deg,#1a0a2e 0%,#0d0a1a 100%);
-  border:3px solid #f1c40f;border-radius:8px;padding:16px;}
-#casino-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
-#casino-title{color:#f1c40f;font-size:18px;font-weight:bold;text-shadow:0 0 10px rgba(241,196,15,.6);}
-#casino-medal-disp{font-size:13px;background:#111;border:1px solid #f1c40f;
-  border-radius:20px;padding:4px 14px;color:#f1c40f;}
+/* ===== カジノ画面（マジスロ風） ===== */
+@keyframes casinoFlash{0%,100%{opacity:1}50%{opacity:0.3}}
+@keyframes bonusBounce{0%{transform:scale(0.5);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+@keyframes reelSpin{0%{transform:translateY(0)}100%{transform:translateY(-900px)}}
+@keyframes reachPulse{0%,100%{box-shadow:0 0 8px #f1c40f,0 0 20px #f1c40f}50%{box-shadow:0 0 20px #ff0,0 0 50px #ff0,0 0 80px #f90}}
+@keyframes bgShimmer{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+@keyframes coinSpin{0%{transform:rotateY(0deg)}100%{transform:rotateY(360deg)}}
+@keyframes flashGold{0%,100%{color:#f1c40f;text-shadow:0 0 10px #f1c40f}50%{color:#fff;text-shadow:0 0 30px #ff0,0 0 60px #f90}}
+
+#casino-screen{
+  background:linear-gradient(160deg,#2a0a0a 0%,#1a0520 40%,#0a1a3a 100%);
+  border:4px solid;border-image:linear-gradient(135deg,#f1c40f,#e67e22,#f1c40f,#c0392b,#f1c40f) 1;
+  border-radius:0;padding:0;overflow:hidden;position:relative;}
+/* 背景の装飾ライン */
+#casino-screen::before{content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(45deg,transparent,transparent 40px,rgba(241,196,15,.03) 40px,rgba(241,196,15,.03) 41px);
+  pointer-events:none;z-index:0;}
+
+/* カジノヘッダー */
+#casino-header{
+  position:relative;z-index:1;
+  background:linear-gradient(180deg,#3a0a10 0%,#1a0508 100%);
+  border-bottom:3px solid #f1c40f;
+  padding:10px 16px;
+  display:flex;justify-content:space-between;align-items:center;}
+#casino-title{
+  color:#f1c40f;font-size:20px;font-weight:bold;
+  text-shadow:0 0 12px rgba(241,196,15,.9),0 2px 4px #000;
+  letter-spacing:2px;}
+#casino-medal-disp{
+  font-size:14px;font-weight:bold;
+  background:linear-gradient(135deg,#1a0a00,#2a1500);
+  border:2px solid #f1c40f;border-radius:20px;
+  padding:5px 16px;color:#f1c40f;
+  text-shadow:0 0 8px #f1c40f;
+  box-shadow:0 0 10px rgba(241,196,15,.3);}
+
 /* タブ */
-.casino-tabs{display:flex;gap:4px;margin-bottom:12px;}
-.casino-tab{flex:1;padding:8px;text-align:center;font-size:13px;background:#111;
-  border:1px solid #333;border-radius:4px 4px 0 0;cursor:pointer;color:#888;}
-.casino-tab.active{background:#1a1a2e;border-color:#f1c40f;color:#f1c40f;}
-.casino-pane{display:none;} .casino-pane.active{display:block;}
-/* スロット */
-#slot-machine{background:#0a0a18;border:2px solid #555;border-radius:10px;
-  padding:20px;text-align:center;margin-bottom:14px;}
-#slot-reels{display:flex;justify-content:center;gap:10px;margin-bottom:16px;}
-.slot-reel{width:80px;height:90px;background:#111;border:2px solid #444;
-  border-radius:8px;overflow:hidden;position:relative;}
-.slot-reel-inner{position:absolute;width:100%;transition:transform 0s;}
-.slot-reel-inner.spinning{transition:none;}
-.slot-symbol{height:90px;display:flex;align-items:center;justify-content:center;
-  font-size:40px;line-height:1;}
-#slot-bet-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;}
-#slot-bet-disp{font-size:14px;color:#f1c40f;min-width:80px;text-align:center;}
-.slot-bet-btn{background:#1a1a2e;border:1px solid #555;color:#ccc;padding:4px 12px;
-  border-radius:4px;cursor:pointer;font-size:12px;}
-.slot-bet-btn:hover{border-color:#f1c40f;color:#f1c40f;}
-#slot-spin-btn{background:linear-gradient(135deg,#c0392b,#e74c3c);color:#fff;
-  border:none;padding:12px 40px;border-radius:8px;font-size:16px;font-weight:bold;
-  cursor:pointer;box-shadow:0 4px 12px rgba(231,76,60,.5);transition:transform .1s;}
-#slot-spin-btn:hover{transform:scale(1.05);}
-#slot-spin-btn:disabled{background:#333;color:#666;box-shadow:none;cursor:not-allowed;transform:none;}
-#slot-result-msg{min-height:32px;font-size:14px;font-weight:bold;color:#f1c40f;
-  text-align:center;margin-bottom:6px;line-height:1.5;}
+.casino-tabs{display:flex;gap:0;position:relative;z-index:1;border-bottom:2px solid #f1c40f;}
+.casino-tab{
+  flex:1;padding:9px;text-align:center;font-size:13px;font-weight:bold;
+  background:linear-gradient(180deg,#1a0a10,#0d0508);
+  border:none;border-right:1px solid #333;
+  cursor:pointer;color:#888;letter-spacing:1px;transition:all .2s;}
+.casino-tab:last-child{border-right:none;}
+.casino-tab:hover{background:linear-gradient(180deg,#2a1020,#1a0810);color:#f1c40f;}
+.casino-tab.active{
+  background:linear-gradient(180deg,#3a1520,#2a0a10);
+  color:#f1c40f;text-shadow:0 0 8px #f1c40f;
+  border-top:2px solid #f1c40f;}
+.casino-pane{display:none;position:relative;z-index:1;}
+.casino-pane.active{display:block;}
+
+/* ── スロットマシン本体 ── */
+#slot-machine{
+  background:linear-gradient(180deg,#1a0820 0%,#0a0510 100%);
+  padding:16px 12px 12px;text-align:center;}
+
+/* スロットタイトル装飾 */
+#slot-machine-title{
+  font-size:11px;color:#888;letter-spacing:3px;margin-bottom:8px;
+  text-transform:uppercase;}
+
+/* リール外枠（マジスロ風の金縁フレーム） */
+#slot-reels-frame{
+  background:linear-gradient(180deg,#4a2000,#2a1000,#4a2000);
+  border:3px solid #c8881a;
+  border-radius:12px;
+  padding:10px 14px;
+  display:inline-block;
+  box-shadow:0 0 20px rgba(200,136,26,.4),inset 0 0 20px rgba(0,0,0,.6);
+  margin-bottom:10px;position:relative;}
+/* リールウィンドウ（上下のマスク） */
+#slot-reels-frame::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:10px;
+  background:linear-gradient(180deg,#2a1000,transparent);
+  border-radius:10px 10px 0 0;z-index:2;pointer-events:none;}
+#slot-reels-frame::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:10px;
+  background:linear-gradient(0deg,#2a1000,transparent);
+  border-radius:0 0 10px 10px;z-index:2;pointer-events:none;}
+
+/* リール横並び */
+#slot-reels{display:flex;justify-content:center;gap:8px;}
+
+/* 各リール */
+.slot-reel{
+  width:100px;height:110px;
+  background:#000;
+  border:2px solid #8a5a00;
+  border-radius:6px;
+  overflow:hidden;position:relative;
+  box-shadow:inset 0 0 12px rgba(0,0,0,.8);}
+/* 中央ライン（当選ライン） */
+.slot-reel::after{
+  content:'';position:absolute;top:50%;left:0;right:0;height:2px;
+  background:rgba(255,50,50,.6);transform:translateY(-50%);
+  z-index:3;pointer-events:none;}
+
+/* リールストリップ（縦に並んだ絵柄列） */
+.slot-reel-inner{
+  position:absolute;width:100%;top:0;
+  transition:top 0.08s linear;}
+
+/* 1コマ */
+.slot-symbol{
+  height:110px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  font-size:42px;line-height:1;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  position:relative;}
+.slot-symbol .sym-label{
+  font-size:9px;color:rgba(255,255,255,.5);margin-top:2px;letter-spacing:1px;}
+
+/* リーチ時の光エフェクト */
+.slot-reel.reach{animation:reachPulse 0.6s ease-in-out infinite;}
+/* ストップ時のフラッシュ */
+.slot-reel.stopped{border-color:#f1c40f;}
+
+/* 当選ライン光（3枚揃い時） */
+#slot-win-line{
+  height:4px;background:linear-gradient(90deg,transparent,#ff0,#f90,#ff0,transparent);
+  margin:0 14px 8px;border-radius:2px;opacity:0;transition:opacity .2s;
+  box-shadow:0 0 12px #ff0;}
+#slot-win-line.active{opacity:1;animation:casinoFlash .4s ease-in-out 4;}
+
+/* BONUS!!表示 */
+#slot-bonus-banner{
+  display:none;text-align:center;margin-bottom:8px;
+  animation:bonusBounce .5s ease-out;}
+#slot-bonus-banner .bonus-text{
+  font-size:32px;font-weight:900;letter-spacing:4px;
+  background:linear-gradient(180deg,#ff0 0%,#f90 50%,#f60 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  text-shadow:none;filter:drop-shadow(0 0 8px #ff0);}
+#slot-bonus-banner .bonus-777{
+  font-size:28px;letter-spacing:6px;color:#ff0;
+  text-shadow:0 0 16px #f90,0 0 32px #f60;}
+
+/* 結果メッセージ */
+#slot-result-msg{
+  min-height:28px;font-size:15px;font-weight:bold;color:#f1c40f;
+  text-align:center;margin-bottom:8px;line-height:1.5;
+  text-shadow:0 0 8px currentColor;}
+
+/* CHANCE!バッジ */
+#slot-chance-badge{
+  display:none;background:linear-gradient(135deg,#1a6a00,#2ecc71);
+  color:#fff;font-size:13px;font-weight:bold;letter-spacing:2px;
+  padding:3px 16px;border-radius:20px;margin-bottom:6px;
+  border:2px solid #2ecc71;box-shadow:0 0 12px rgba(46,204,113,.6);
+  animation:casinoFlash .5s ease-in-out infinite;}
+
+/* ベット操作エリア */
+#slot-controls{
+  background:linear-gradient(180deg,#1a0510,#0a020a);
+  border:1px solid #3a2030;
+  border-radius:8px;padding:10px 14px;margin-top:10px;}
+#slot-bet-row{
+  display:flex;align-items:center;justify-content:center;
+  gap:8px;margin-bottom:10px;}
+#slot-bet-label{font-size:11px;color:#888;letter-spacing:1px;margin-right:4px;}
+#slot-bet-disp{
+  font-size:18px;font-weight:bold;color:#f1c40f;min-width:70px;text-align:center;
+  background:#0a0a0a;border:1px solid #444;border-radius:4px;padding:2px 8px;
+  text-shadow:0 0 8px #f1c40f;}
+.slot-bet-btn{
+  background:linear-gradient(180deg,#2a1520,#1a0510);
+  border:1px solid #6a3040;color:#ccc;padding:5px 12px;
+  border-radius:4px;cursor:pointer;font-size:13px;font-weight:bold;
+  transition:all .15s;}
+.slot-bet-btn:hover{border-color:#f1c40f;color:#f1c40f;background:linear-gradient(180deg,#3a2030,#2a1020);}
+
+/* レバーボタン（スピン） */
+#slot-spin-btn{
+  width:100%;
+  background:linear-gradient(180deg,#8a1010 0%,#c0392b 40%,#e74c3c 60%,#8a1010 100%);
+  color:#fff;border:3px solid #f1c40f;
+  padding:13px;border-radius:8px;font-size:18px;font-weight:900;
+  cursor:pointer;letter-spacing:2px;
+  box-shadow:0 4px 16px rgba(231,76,60,.6),0 0 24px rgba(241,196,15,.3),inset 0 1px 0 rgba(255,255,255,.2);
+  transition:all .1s;text-shadow:0 1px 3px #000;}
+#slot-spin-btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 6px 24px rgba(231,76,60,.8),0 0 32px rgba(241,196,15,.5);}
+#slot-spin-btn:active{transform:translateY(1px);}
+#slot-spin-btn:disabled{
+  background:linear-gradient(180deg,#1a1a1a,#333);
+  border-color:#555;color:#666;box-shadow:none;cursor:not-allowed;transform:none;}
+
 /* 当選表 */
-.pay-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;}
-.pay-table th{color:#f1c40f;padding:4px 8px;border-bottom:1px solid #333;text-align:left;}
-.pay-table td{color:#aaa;padding:3px 8px;border-bottom:1px solid #1a1a1a;}
+#pay-table-wrap{
+  margin-top:12px;
+  background:linear-gradient(180deg,#120518,#0a020a);
+  border:1px solid #3a1030;border-radius:8px;padding:10px;}
+#pay-table-title{font-size:11px;color:#888;letter-spacing:2px;margin-bottom:6px;text-align:center;}
+.pay-table{width:100%;border-collapse:collapse;font-size:11px;}
+.pay-table th{color:#f1c40f;padding:4px 8px;border-bottom:1px solid #3a1030;text-align:left;font-size:10px;letter-spacing:1px;}
+.pay-table td{color:#aaa;padding:3px 8px;border-bottom:1px solid #1a0518;}
+.pay-table td:first-child{font-size:14px;letter-spacing:2px;}
+.pay-table td:last-child{color:#f39c12;text-align:right;}
 .pay-table tr.jackpot td{color:#f1c40f;font-weight:bold;}
+.pay-table tr.jackpot td:last-child{color:#ff0;text-shadow:0 0 6px #f90;animation:flashGold 1.5s ease-in-out infinite;}
+
 /* メダル交換所 */
-.exchange-card{background:#0a0a18;border:1px solid #555;border-radius:8px;
-  padding:12px;margin-bottom:10px;display:flex;align-items:center;gap:14px;}
+.exchange-card{
+  background:linear-gradient(135deg,#0a1020,#0a0818);
+  border:1px solid #6a4a00;
+  border-radius:8px;padding:12px;margin-bottom:10px;
+  display:flex;align-items:center;gap:14px;
+  box-shadow:0 0 8px rgba(200,136,26,.15);}
+.exchange-card:hover{border-color:#f1c40f;box-shadow:0 0 16px rgba(241,196,15,.2);}
 .exchange-icon{font-size:32px;flex-shrink:0;}
 .exchange-info{flex:1;}
 .exchange-name{font-size:14px;font-weight:bold;color:#f1c40f;margin-bottom:3px;}
 .exchange-desc{font-size:11px;color:#888;margin-bottom:5px;}
-.exchange-cost{font-size:12px;color:#f39c12;}
-.exchange-btn{background:#1a2a3a;border:1px solid #3498db;border-radius:4px;
-  padding:6px 14px;color:#3498db;font-size:12px;cursor:pointer;white-space:nowrap;}
-.exchange-btn:hover{background:#1a3a5a;}
+.exchange-cost{font-size:12px;color:#f39c12;font-weight:bold;}
+.exchange-btn{
+  background:linear-gradient(135deg,#1a2a3a,#0a1828);
+  border:1px solid #3498db;border-radius:4px;
+  padding:6px 14px;color:#3498db;font-size:12px;cursor:pointer;white-space:nowrap;
+  transition:all .15s;}
+.exchange-btn:hover{background:linear-gradient(135deg,#2a3a5a,#1a2840);border-color:#5ab8f8;color:#5ab8f8;}
 .exchange-btn:disabled{background:#111;border-color:#333;color:#444;cursor:not-allowed;}
 .exchange-owned{font-size:10px;color:#555;margin-top:2px;}
+
 /* メダル購入 */
 .medal-buy-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
-.medal-buy-btn{background:#1a2a1a;border:1px solid #2ecc71;border-radius:4px;
-  padding:8px 14px;color:#2ecc71;font-size:12px;cursor:pointer;text-align:center;}
-.medal-buy-btn:hover{background:#1a3a1a;}
-.medal-buy-btn:disabled{background:#111;border-color:#333;color:#444;cursor:not-allowed;}
+.medal-buy-btn{
+  background:linear-gradient(135deg,#0a1a0a,#112211);
+  border:2px solid #2ecc71;border-radius:6px;
+  padding:10px 14px;color:#2ecc71;font-size:12px;font-weight:bold;
+  cursor:pointer;text-align:center;flex:1;min-width:120px;
+  box-shadow:0 0 8px rgba(46,204,113,.2);transition:all .15s;}
+.medal-buy-btn:hover{background:linear-gradient(135deg,#1a3a1a,#224422);box-shadow:0 0 16px rgba(46,204,113,.4);}
+.medal-buy-btn:disabled{background:#0a0a0a;border-color:#333;color:#444;cursor:not-allowed;box-shadow:none;}
+
+/* カジノフッター */
+#casino-footer{padding:10px 16px;position:relative;z-index:1;}
 </style>
 </head>
 <body>
@@ -387,11 +567,11 @@ h3{color:#f1c40f;margin-bottom:8px;font-size:14px;}
   </div>
 </div>
 
-<!-- ===== カジノ画面 ===== -->
+<!-- ===== カジノ画面（マジスロ風） ===== -->
 <div id="casino-screen" class="screen">
   <div id="casino-header">
     <div id="casino-title">🎰 カジノ「星天堂」</div>
-    <div id="casino-medal-disp">🎖 メダル: <span id="casino-medal-count">0</span> 枚</div>
+    <div id="casino-medal-disp">🎖 <span id="casino-medal-count">0</span> メダル</div>
   </div>
 
   <div class="casino-tabs">
@@ -400,60 +580,89 @@ h3{color:#f1c40f;margin-bottom:8px;font-size:14px;}
     <div class="casino-tab" onclick="casinoTab('buy')">💰 メダル購入</div>
   </div>
 
-  <!-- スロットペイン -->
+  <!-- ── スロットペイン ── -->
   <div id="casino-pane-slot" class="casino-pane active">
     <div id="slot-machine">
-      <div id="slot-reels">
-        <div class="slot-reel" id="reel-0"><div class="slot-reel-inner" id="reel-inner-0"></div></div>
-        <div class="slot-reel" id="reel-1"><div class="slot-reel-inner" id="reel-inner-1"></div></div>
-        <div class="slot-reel" id="reel-2"><div class="slot-reel-inner" id="reel-inner-2"></div></div>
+      <div id="slot-machine-title">— MAGIC SLOT —</div>
+
+      <!-- BONUS!!バナー -->
+      <div id="slot-bonus-banner">
+        <div class="bonus-text">BONUS!!</div>
+        <div class="bonus-777">7 7 7</div>
       </div>
+
+      <!-- CHANCEバッジ -->
+      <div id="slot-chance-badge">★ CHANCE! ★</div>
+
+      <!-- 結果メッセージ -->
       <div id="slot-result-msg">レバーを引いて運試し！</div>
-      <div id="slot-bet-row">
-        <button class="slot-bet-btn" onclick="slotChangeBet(-10)">－10</button>
-        <button class="slot-bet-btn" onclick="slotChangeBet(-1)">－1</button>
-        <div id="slot-bet-disp">賭け: <strong id="slot-bet-val">1</strong> 枚</div>
-        <button class="slot-bet-btn" onclick="slotChangeBet(1)">＋1</button>
-        <button class="slot-bet-btn" onclick="slotChangeBet(10)">＋10</button>
+
+      <!-- 当選ライン光 -->
+      <div id="slot-win-line"></div>
+
+      <!-- リール本体 -->
+      <div id="slot-reels-frame">
+        <div id="slot-reels">
+          <div class="slot-reel" id="reel-0"><div class="slot-reel-inner" id="reel-inner-0"></div></div>
+          <div class="slot-reel" id="reel-1"><div class="slot-reel-inner" id="reel-inner-1"></div></div>
+          <div class="slot-reel" id="reel-2"><div class="slot-reel-inner" id="reel-inner-2"></div></div>
+        </div>
       </div>
-      <button id="slot-spin-btn" onclick="slotSpin()">🎰 スピン！</button>
+
+      <!-- ベット操作 -->
+      <div id="slot-controls">
+        <div id="slot-bet-row">
+          <span id="slot-bet-label">BET</span>
+          <button class="slot-bet-btn" onclick="slotChangeBet(-10)">－10</button>
+          <button class="slot-bet-btn" onclick="slotChangeBet(-1)">－1</button>
+          <div id="slot-bet-disp"><span id="slot-bet-val">1</span></div>
+          <button class="slot-bet-btn" onclick="slotChangeBet(1)">＋1</button>
+          <button class="slot-bet-btn" onclick="slotChangeBet(10)">＋10</button>
+        </div>
+        <button id="slot-spin-btn" onclick="slotSpin()">🎰 レバーを引く！</button>
+      </div>
     </div>
 
     <!-- 当選表 -->
-    <table class="pay-table">
-      <tr><th>絵柄</th><th>組み合わせ</th><th>配当</th></tr>
-      <tr class="jackpot"><td>👑👑👑</td><td>王冠ぞろい</td><td>賭け×100（大当たり）</td></tr>
-      <tr><td>⭐⭐⭐</td><td>星ぞろい</td><td>賭け×30</td></tr>
-      <tr><td>💎💎💎</td><td>宝石ぞろい</td><td>賭け×20</td></tr>
-      <tr><td>🍒🍒🍒</td><td>チェリーぞろい</td><td>賭け×10</td></tr>
-      <tr><td>🔔🔔🔔</td><td>ベルぞろい</td><td>賭け×8</td></tr>
-      <tr><td>7️⃣7️⃣7️⃣</td><td>777ぞろい</td><td>賭け×50</td></tr>
-      <tr><td>🍋🍋🍋</td><td>レモンぞろい</td><td>賭け×5</td></tr>
-      <tr><td>🍒🍒 ？</td><td>チェリー2つ</td><td>賭け×2</td></tr>
-      <tr><td>リーチ</td><td>2つ揃い（リーチ）</td><td>賭け×1（払い戻し）</td></tr>
-    </table>
+    <div id="pay-table-wrap">
+      <div id="pay-table-title">— PAY TABLE —</div>
+      <table class="pay-table">
+        <tr><th>絵柄</th><th>役</th><th>配当</th></tr>
+        <tr class="jackpot"><td>👑👑👑</td><td>王冠ぞろい</td><td>×100</td></tr>
+        <tr><td>7️⃣7️⃣7️⃣</td><td>777</td><td>×50</td></tr>
+        <tr><td>⭐⭐⭐</td><td>スターぞろい</td><td>×30</td></tr>
+        <tr><td>💎💎💎</td><td>ジュエルぞろい</td><td>×20</td></tr>
+        <tr><td>🍒🍒🍒</td><td>チェリーぞろい</td><td>×10</td></tr>
+        <tr><td>🔔🔔🔔</td><td>ベルぞろい</td><td>×8</td></tr>
+        <tr><td>🍋🍋🍋</td><td>レモンぞろい</td><td>×5</td></tr>
+        <tr><td>🍒🍒 ？</td><td>チェリー2つ</td><td>×2</td></tr>
+        <tr><td>2つ揃い</td><td>リーチ</td><td>払い戻し</td></tr>
+      </table>
+    </div>
   </div>
 
-  <!-- 景品交換ペイン -->
-  <div id="casino-pane-exchange" class="casino-pane">
-    <p style="font-size:11px;color:#888;margin-bottom:12px;">
-      メダルを使って最強の装備と交換できます。<br>
-      これらの装備は他では手に入りません。
+  <!-- ── 景品交換ペイン ── -->
+  <div id="casino-pane-exchange" class="casino-pane" style="padding:14px;">
+    <p style="font-size:11px;color:#888;margin-bottom:12px;letter-spacing:1px;">
+      ✦ メダルを集めて伝説の装備と交換しよう ✦<br>
+      <span style="color:#555;">これらの装備は他では手に入らない</span>
     </p>
     <div id="exchange-list"></div>
   </div>
 
-  <!-- メダル購入ペイン -->
-  <div id="casino-pane-buy" class="casino-pane">
+  <!-- ── メダル購入ペイン ── -->
+  <div id="casino-pane-buy" class="casino-pane" style="padding:14px;">
     <p style="font-size:11px;color:#888;margin-bottom:10px;">
       ゴールドでメダルを購入できます。<br>
-      現在の所持金: <strong id="casino-gold-disp" style="color:#f1c40f;">0</strong> G
+      所持金: <strong id="casino-gold-disp" style="color:#f1c40f;font-size:14px;">0</strong> G
     </p>
     <div class="medal-buy-row" id="medal-buy-row"></div>
     <p style="font-size:10px;color:#555;margin-top:8px;">※ メダルはゴールドに戻せません</p>
   </div>
 
-  <button class="btn" onclick="leaveCasino()" style="margin-top:14px;width:100%;">← カジノを出る</button>
+  <div id="casino-footer">
+    <button class="btn" onclick="leaveCasino()" style="width:100%;padding:10px;letter-spacing:1px;">← カジノを出る</button>
+  </div>
 </div>
 
 </div><!-- #app -->
@@ -4146,26 +4355,39 @@ function renderCastle(el) {
 
 
 // =============================================
-// カジノ「星天堂」
+// カジノ「星天堂」（マジスロ風）
 // =============================================
 
-// メダル枚数
 let casinoMedals = 0;
 
-// スロット絵柄定義（シンボル・レア度・倍率）
-const SLOT_SYMBOLS = ['🍋','🍒','🔔','💎','⭐','7️⃣','👑'];
-// 各シンボルのリール出現頻度（多いほど出やすい）
-const SLOT_WEIGHTS  = [  20,   15,   12,    8,    6,    4,    2];
+// ── DQ風スロット絵柄定義 ──
+// emoji + ラベル + レア重み
+const SLOT_SYMBOLS = [
+  { sym:'🍋', label:'LEMON',  weight:20 },
+  { sym:'🍒', label:'CHERRY', weight:16 },
+  { sym:'🔔', label:'BELL',   weight:12 },
+  { sym:'💎', label:'JEWEL',  weight:8  },
+  { sym:'⭐', label:'STAR',   weight:6  },
+  { sym:'7️⃣', label:'7',      weight:4  },
+  { sym:'👑', label:'CROWN',  weight:2  },
+];
+const SLOT_WEIGHTS = SLOT_SYMBOLS.map(s => s.weight);
 
 let slotBet      = 1;
 let slotSpinning = false;
-// 破邪の盾の「初回攻撃確定会心」フラグ（戦闘開幕時にリセット）
-// → _initBattle で全員リセット、selectAction/executeTech で使用後オフ
-// firstCritUsed は party[i].firstCritUsed で管理
 
-// スロットタブ切り替え
+// リール1本に並べるシンボル列（ループ用に多めに生成）
+function buildReelStrip() {
+  const strip = [];
+  for (let i = 0; i < 12; i++) {
+    strip.push(SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)]);
+  }
+  return strip;
+}
+
+// ── タブ切り替え ──
 function casinoTab(name) {
-  document.querySelectorAll('.casino-tab').forEach((b,i) => {
+  document.querySelectorAll('.casino-tab').forEach((b, i) => {
     const names = ['slot','exchange','buy'];
     b.classList.toggle('active', names[i] === name);
   });
@@ -4175,24 +4397,36 @@ function casinoTab(name) {
   if (name === 'buy')      renderMedalBuy();
 }
 
-// カジノ画面描画
+// ── カジノ画面初期化 ──
 function renderCasino() {
   updateCasinoMedalDisp();
-  // リール初期化
-  SLOT_REEL_INIT.forEach((sym, i) => setReelSymbol(i, sym));
-  document.getElementById('slot-result-msg').textContent = 'レバーを引いて運試し！';
-  document.getElementById('slot-result-msg').style.color = '#f1c40f';
+  hideBonusBanner();
+  hideChanceBadge();
+  document.getElementById('slot-win-line').classList.remove('active');
+  // リール初期表示（停止状態）
+  [0,1,2].forEach(i => {
+    const inner = document.getElementById(`reel-inner-${i}`);
+    if (!inner) return;
+    inner.innerHTML = buildSymbolCell(SLOT_SYMBOLS[0]);
+    inner.style.top = '0px';
+  });
+  setResultMsg('レバーを引いて運試し！', '#f1c40f');
   updateSlotBetDisp();
 }
 
-// メダル表示更新
+// 1コマのHTMLを生成
+function buildSymbolCell(sym) {
+  return `<div class="slot-symbol"><span>${sym.sym}</span><span class="sym-label">${sym.label}</span></div>`;
+}
+
+// ── メダル表示 ──
 function updateCasinoMedalDisp() {
   document.getElementById('casino-medal-count').textContent = casinoMedals;
 }
 
-// ベット変更
+// ── ベット操作 ──
 function slotChangeBet(delta) {
-  slotBet = Math.max(1, Math.min(casinoMedals, slotBet + delta));
+  slotBet = Math.max(1, Math.min(casinoMedals || 1, slotBet + delta));
   updateSlotBetDisp();
 }
 function updateSlotBetDisp() {
@@ -4200,17 +4434,16 @@ function updateSlotBetDisp() {
   document.getElementById('slot-spin-btn').disabled = slotSpinning || casinoMedals < slotBet || slotBet < 1;
 }
 
-// リールに絵柄セット
-const SLOT_REEL_INIT = ['🎰','🎰','🎰'];
-function setReelSymbol(reelIdx, sym) {
-  const inner = document.getElementById(`reel-inner-${reelIdx}`);
-  if (!inner) return;
-  inner.innerHTML = `<div class="slot-symbol">${sym}</div>`;
+// ── 結果メッセージ ──
+function setResultMsg(text, color) {
+  const el = document.getElementById('slot-result-msg');
+  el.textContent = text;
+  el.style.color = color;
 }
 
-// 重み付きランダムシンボル
+// ── 重み付きランダム選択 ──
 function pickSlotSymbol() {
-  const total = SLOT_WEIGHTS.reduce((a,b) => a+b, 0);
+  const total = SLOT_WEIGHTS.reduce((a,b)=>a+b,0);
   let r = Math.random() * total;
   for (let i = 0; i < SLOT_SYMBOLS.length; i++) {
     r -= SLOT_WEIGHTS[i];
@@ -4219,129 +4452,171 @@ function pickSlotSymbol() {
   return SLOT_SYMBOLS[0];
 }
 
-// スピン処理
-function slotSpin() {
-  if (slotSpinning || casinoMedals < slotBet) return;
+// ── BONUS!!バナー ──
+function showBonusBanner() {
+  const el = document.getElementById('slot-bonus-banner');
+  el.style.display = 'block';
+  el.style.animation = 'none';
+  void el.offsetWidth;
+  el.style.animation = 'bonusBounce .5s ease-out';
+}
+function hideBonusBanner() {
+  document.getElementById('slot-bonus-banner').style.display = 'none';
+}
 
-  // ベット分消費
-  casinoMedals -= slotBet;
-  slotSpinning = true;
-  document.getElementById('slot-spin-btn').disabled = true;
-  document.getElementById('slot-result-msg').textContent = '回転中...';
-  document.getElementById('slot-result-msg').style.color = '#aaa';
-  updateCasinoMedalDisp();
+// ── CHANCEバッジ ──
+function showChanceBadge() { document.getElementById('slot-chance-badge').style.display = 'inline-block'; }
+function hideChanceBadge() { document.getElementById('slot-chance-badge').style.display = 'none'; }
 
-  // 結果をあらかじめ決定
-  const results = [pickSlotSymbol(), pickSlotSymbol(), pickSlotSymbol()];
+// ── リール縦スクロールアニメ ──
+// 各リールに大量のシンボルを縦に並べ、topをマイナス方向に動かして止める
+function animateReel(reelIdx, finalSym, stopDelay) {
+  return new Promise(resolve => {
+    const inner = document.getElementById(`reel-inner-${reelIdx}`);
+    if (!inner) { resolve(); return; }
+    const CELL_H = 110; // .slot-reel の height に合わせる
+    const STRIP_COUNT = 16; // 表示用コマ数
 
-  // リール別に停止タイミングをずらしてアニメ
-  const SPIN_FRAMES = 18; // 1リールあたりのフレーム数
-  const STOP_DELAY  = [600, 1000, 1400]; // 各リールが止まるミリ秒
+    // ランダムなストリップを生成し、最後に finalSym を置く
+    const strip = [];
+    for (let i = 0; i < STRIP_COUNT - 1; i++) {
+      strip.push(SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)]);
+    }
+    strip.push(finalSym); // 最下段 = 停止絵柄
 
-  // アニメーション：各リールを高速でランダム表示 → 指定時刻に結果で止める
-  const spinIntervals = [null, null, null];
-  [0, 1, 2].forEach(i => {
-    let frame = 0;
-    spinIntervals[i] = setInterval(() => {
-      setReelSymbol(i, SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)]);
-      frame++;
-    }, 60);
+    inner.innerHTML = strip.map(s => buildSymbolCell(s)).join('');
+    const totalH = STRIP_COUNT * CELL_H;
+    const endTop = -(totalH - CELL_H); // 最後のコマが見えるtop値
 
-    setTimeout(() => {
-      clearInterval(spinIntervals[i]);
-      setReelSymbol(i, results[i]);
-      // 最後のリールが止まったら判定
-      if (i === 2) {
-        setTimeout(() => slotJudge(results), 200);
+    // topをアニメーションさせる（requestAnimationFrameベース）
+    inner.style.top = '0px';
+    const startTime = performance.now();
+    const duration  = stopDelay; // ミリ秒
+
+    function step(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // イージング：最初は速く、最後は減速
+      const ease = progress < 0.7
+        ? progress / 0.7        // 高速フェーズ
+        : 1 - Math.pow(1 - (progress - 0.7) / 0.3, 3); // 減速フェーズ
+      inner.style.top = (endTop * ease) + 'px';
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        inner.style.top = endTop + 'px';
+        document.getElementById(`reel-${reelIdx}`).classList.add('stopped');
+        resolve();
       }
-    }, STOP_DELAY[i]);
+    }
+    requestAnimationFrame(step);
   });
 }
 
-// 当選判定
+// ── スピン本体 ──
+function slotSpin() {
+  if (slotSpinning || casinoMedals < slotBet) return;
+
+  casinoMedals -= slotBet;
+  slotSpinning  = true;
+  document.getElementById('slot-spin-btn').disabled = true;
+  hideBonusBanner();
+  hideChanceBadge();
+  document.getElementById('slot-win-line').classList.remove('active');
+  // リールのstoppedクラスをリセット
+  [0,1,2].forEach(i => document.getElementById(`reel-${i}`).classList.remove('stopped','reach'));
+  setResultMsg('▼ 回転中... ▼', '#888');
+  updateCasinoMedalDisp();
+
+  // 結果を事前決定
+  const results = [pickSlotSymbol(), pickSlotSymbol(), pickSlotSymbol()];
+
+  // 2枚揃い（リーチ）チェック → 演出
+  const checkReach = () => {
+    if (results[0].sym === results[1].sym && results[1].sym !== results[2].sym) {
+      showChanceBadge();
+      document.getElementById(`reel-0`).classList.add('reach');
+      document.getElementById(`reel-1`).classList.add('reach');
+    }
+  };
+
+  // 各リールを順番に停止（チェーンPromise）
+  const DELAYS = [700, 1200, 1800]; // 停止アニメ時間
+  animateReel(0, results[0], DELAYS[0]).then(() => {
+    animateReel(1, results[1], DELAYS[1]).then(() => {
+      checkReach();
+      animateReel(2, results[2], DELAYS[2]).then(() => {
+        hideChanceBadge();
+        setTimeout(() => slotJudge(results), 200);
+      });
+    });
+  });
+}
+
+// ── 当選判定 ──
 function slotJudge(res) {
   const [a, b, c] = res;
-  let payout = 0;
-  let msg    = '';
-  let color  = '#f1c40f';
+  let payout = 0, msg = '', color = '#f1c40f';
+  let isJackpot = false;
 
-  if (a === b && b === c) {
-    // 3つ揃い
-    const mult = {
-      '👑': 100, '7️⃣': 50, '⭐': 30, '💎': 20,
-      '🍒': 10,  '🔔': 8,  '🍋': 5,
-    }[a] ?? 3;
+  if (a.sym === b.sym && b.sym === c.sym) {
+    const mult = {'👑':100,'7️⃣':50,'⭐':30,'💎':20,'🍒':10,'🔔':8,'🍋':5}[a.sym] ?? 3;
     payout = slotBet * mult;
-    if (mult >= 50)      { msg = `🎊✨ ${a}${b}${c} JACKPOT！！ +${payout}メダル！！`; color = '#f1c40f'; }
-    else if (mult >= 20) { msg = `🎉 ${a}${b}${c} 大当たり！ +${payout}メダル！`; color = '#2ecc71'; }
-    else                 { msg = `✨ ${a}${b}${c} 当たり！ +${payout}メダル`; color = '#3498db'; }
-  } else if (a === '🍒' && b === '🍒') {
-    // チェリー2つ
+    if (mult >= 100)     { isJackpot = true; msg = `👑 JACKPOT！！ ${a.sym}${b.sym}${c.sym} +${payout}メダル！！`; color = '#ff0'; }
+    else if (mult >= 50) { isJackpot = true; msg = `7️⃣ BIG WIN！ 777！ +${payout}メダル！！`; color = '#ff0'; }
+    else if (mult >= 20) { msg = `🎉 大当たり！ ${a.sym}${b.sym}${c.sym} +${payout}メダル！`; color = '#2ecc71'; }
+    else                 { msg = `✨ 当たり！ ${a.sym}${b.sym}${c.sym} +${payout}メダル`; color = '#3498db'; }
+  } else if (a.sym === '🍒' && b.sym === '🍒') {
     payout = slotBet * 2;
-    msg = `🍒🍒 チェリー2つ！ +${payout}メダル`;
-    color = '#e74c3c';
-  } else if ((a===b)||(b===c)||(a===c)) {
-    // 2つ揃い（リーチ）→ 払い戻し
+    msg = `🍒🍒 チェリー2つ！ +${payout}メダル`; color = '#e74c3c';
+  } else if (a.sym===b.sym || b.sym===c.sym || a.sym===c.sym) {
     payout = slotBet;
-    msg = `😅 リーチ…！ ${payout}メダル 払い戻し`;
-    color = '#888';
+    msg = `😅 リーチ… ${payout}メダル払い戻し`; color = '#888';
   } else {
-    // ハズレ
-    payout = 0;
-    msg = `😢 ハズレ… (${res.join('')})`;
-    color = '#555';
+    msg = `😢 ハズレ (${res.map(s=>s.sym).join('')})`; color = '#555';
   }
 
   casinoMedals += payout;
-  document.getElementById('slot-result-msg').textContent = msg;
-  document.getElementById('slot-result-msg').style.color = color;
+  setResultMsg(msg, color);
   updateCasinoMedalDisp();
 
-  // ジャックポット時は特別演出
-  if (payout >= slotBet * 50) {
+  // 当たり演出
+  if (isJackpot) {
+    showBonusBanner();
+    document.getElementById('slot-win-line').classList.add('active');
     AudioEngine.se('levelup');
+    // リールをカラーフラッシュ
+    [0,1,2].forEach(i => {
+      const r = document.getElementById(`reel-${i}`);
+      r.style.borderColor = '#ff0';
+      r.style.boxShadow   = '0 0 20px #ff0, 0 0 40px #f90';
+      setTimeout(() => { r.style.borderColor=''; r.style.boxShadow=''; }, 2000);
+    });
     enqueuePopup(`
-      <div class="pop-title" style="color:#f1c40f;">🎰 JACKPOT！！</div>
-      <div class="pop-body">
-        <span style="font-size:28px;">${res.join('')}</span><br>
-        <span class="pop-green">+${payout} メダル獲得！！</span>
-      </div>`);
+      <div class="pop-title" style="color:#ff0;font-size:22px;">🎰 JACKPOT！！</div>
+      <div class="pop-body" style="font-size:20px;">${res.map(s=>s.sym).join('')}<br>
+        <span class="pop-green" style="font-size:18px;">+${payout} メダル！！</span></div>`);
+  } else if (payout > slotBet) {
+    document.getElementById('slot-win-line').classList.add('active');
+    setTimeout(() => document.getElementById('slot-win-line').classList.remove('active'), 2000);
   }
 
   slotSpinning = false;
   updateSlotBetDisp();
 }
 
-// 景品交換リスト描画
+// ── 景品交換 ──
 const CASINO_EXCHANGE = [
-  {
-    name: 'はかぶさのつるぎ',
-    icon: '⚔️',
-    cost: 2000,
-    desc: 'ATK+38 / 二回攻撃（1撃の威力も高い）/ 全職業の剣士装備可',
-    effect: 'はやぶさの剣を遥かに超える伝説の剣。2回攻撃かつ1撃の威力も異常に高い。',
-  },
-  {
-    name: '先代の鎧',
-    icon: '🛡️',
-    cost: 1400,
-    desc: 'DEF+28 / 受けたダメージの3%を跳ね返す',
-    effect: '攻撃を受けるたびにダメージの3%を敵に返す。守りと反撃の伝説の鎧。',
-  },
-  {
-    name: '破邪の盾',
-    icon: '🔰',
-    cost: 1800,
-    desc: 'DEF+22 MP+15 / 戦闘開幕の最初の攻撃が確定会心',
-    effect: '装備者の戦闘開始後、最初の1撃が必ず会心の一撃になる伝説の盾。',
-  },
+  { name:'はかぶさのつるぎ', icon:'⚔️', cost:2000, effect:'ATK+38 / 二回攻撃（1撃の威力も高い）/ はやぶさの剣を遥かに超える伝説の剣' },
+  { name:'先代の鎧',         icon:'🛡️', cost:1400, effect:'DEF+28 / 受けたダメージの3%を敵に跳ね返す伝説の鎧' },
+  { name:'破邪の盾',         icon:'🔰', cost:1800, effect:'DEF+22 MP+15 / 戦闘開幕の最初の攻撃が確定会心になる伝説の盾' },
 ];
 
 function renderExchangeList() {
   const el = document.getElementById('exchange-list');
   el.innerHTML = CASINO_EXCHANGE.map(item => {
-    const owned   = (ownedEquips[item.name] || 0) + (party.some(p => p.weapon === item.name || p.armor === item.name) ? 1 : 0);
-    const canBuy  = casinoMedals >= item.cost;
+    const owned  = (ownedEquips[item.name]||0) + (party.some(p=>p.weapon===item.name||p.armor===item.name)?1:0);
+    const canBuy = casinoMedals >= item.cost;
     return `<div class="exchange-card">
       <div class="exchange-icon">${item.icon}</div>
       <div class="exchange-info">
@@ -4350,67 +4625,57 @@ function renderExchangeList() {
         <div class="exchange-cost">🎖 ${item.cost} メダル</div>
         <div class="exchange-owned">所持数: ${owned}</div>
       </div>
-      <button class="exchange-btn" ${canBuy ? '' : 'disabled'}
-        onclick="casinoExchange('${item.name}')">
-        ${canBuy ? '交換する' : 'メダル不足'}
+      <button class="exchange-btn" ${canBuy?'':'disabled'} onclick="casinoExchange('${item.name}')">
+        ${canBuy?'交換する':'メダル不足'}
       </button>
     </div>`;
   }).join('');
 }
 
 function casinoExchange(itemName) {
-  const item = CASINO_EXCHANGE.find(x => x.name === itemName);
-  if (!item || casinoMedals < item.cost) return;
+  const item = CASINO_EXCHANGE.find(x=>x.name===itemName);
+  if (!item||casinoMedals<item.cost) return;
   casinoMedals -= item.cost;
   addEquip(itemName);
   updateCasinoMedalDisp();
   renderExchangeList();
-  enqueuePopup(`
-    <div class="pop-title">🏆 景品交換！</div>
-    <div class="pop-body">
-      <span style="font-size:22px;">${item.icon}</span><br>
-      <span class="pop-green">『${itemName}』</span> を入手！<br>
-      <span style="font-size:11px;color:#888;">メニュー→装備 から装備できます</span>
-    </div>`);
+  enqueuePopup(`<div class="pop-title">🏆 景品交換！</div>
+    <div class="pop-body"><span style="font-size:22px;">${item.icon}</span><br>
+    <span class="pop-green">『${itemName}』</span> を入手！<br>
+    <span style="font-size:11px;color:#888;">メニュー→装備 から装備できます</span></div>`);
 }
 
-// メダル購入
+// ── メダル購入 ──
 const MEDAL_PACKAGES = [
-  { medals: 10,  gold: 100,  label: '10枚'  },
-  { medals: 30,  gold: 250,  label: '30枚'  },
-  { medals: 100, gold: 700,  label: '100枚' },
-  { medals: 300, gold: 1800, label: '300枚' },
+  { medals:10,  gold:100,  label:'10枚'  },
+  { medals:30,  gold:250,  label:'30枚'  },
+  { medals:100, gold:700,  label:'100枚' },
+  { medals:300, gold:1800, label:'300枚' },
 ];
 
 function renderMedalBuy() {
   document.getElementById('casino-gold-disp').textContent = gold;
-  const row = document.getElementById('medal-buy-row');
-  row.innerHTML = MEDAL_PACKAGES.map((pkg, i) =>
-    `<button class="medal-buy-btn" ${gold >= pkg.gold ? '' : 'disabled'}
-      onclick="buyMedals(${i})">
-      🎖 ${pkg.label}<br>
-      <span style="font-size:11px;color:#aaa;">${pkg.gold} G</span>
+  document.getElementById('medal-buy-row').innerHTML = MEDAL_PACKAGES.map((pkg,i)=>
+    `<button class="medal-buy-btn" ${gold>=pkg.gold?'':'disabled'} onclick="buyMedals(${i})">
+      🎖 ${pkg.label}<br><span style="font-size:11px;color:#aaa;">${pkg.gold} G</span>
     </button>`
   ).join('');
 }
 
 function buyMedals(idx) {
   const pkg = MEDAL_PACKAGES[idx];
-  if (!pkg || gold < pkg.gold) return;
+  if (!pkg||gold<pkg.gold) return;
   gold -= pkg.gold;
   casinoMedals += pkg.medals;
   updateCasinoMedalDisp();
   renderMedalBuy();
   updatePartyBars();
-  enqueuePopup(`
-    <div class="pop-title">🎖 メダル購入</div>
-    <div class="pop-body">
-      <span class="pop-green">${pkg.medals} 枚</span> 購入！<br>
-      所持メダル: ${casinoMedals} 枚
-    </div>`);
+  enqueuePopup(`<div class="pop-title">🎖 メダル購入</div>
+    <div class="pop-body"><span class="pop-green">${pkg.medals} 枚</span> 購入！<br>
+    所持メダル: ${casinoMedals} 枚</div>`);
 }
 
-// カジノを出る
+// ── カジノを出る ──
 function leaveCasino() {
   currentFacility = null;
   encounterLock   = false;
